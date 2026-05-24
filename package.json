@@ -1,7 +1,19 @@
 {
-  "name": "digihoo",
+  "name": "@openhoo/digihoo",
   "version": "0.1.0",
   "description": "TypeScript SDK for Digi-Key API authentication and Product Information endpoints.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openhoo/digihoo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/openhoo/digihoo/issues"
+  },
+  "homepage": "https://github.com/openhoo/digihoo#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "type": "module",
   "license": "UNLICENSED",
   "sideEffects": false,
@@ -22,6 +34,8 @@
     "generate:types": "mkdir -p src/generated && swagger2openapi --outfile /tmp/digikey-product-search-openapi.json https://developer.digikey.com/node/2357/oas-download && openapi-typescript /tmp/digikey-product-search-openapi.json --output src/generated/product-search-v4.ts && swagger2openapi --outfile /tmp/digikey-product-change-notifications-openapi.json https://developer.digikey.com/node/3668/oas-download && openapi-typescript /tmp/digikey-product-change-notifications-openapi.json --output src/generated/product-change-notifications-v3.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepack": "npm run build",
     "verify": "npm run generate:types && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
