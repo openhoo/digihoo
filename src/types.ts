@@ -448,6 +448,28 @@ export type JsonResponse<Operation, Status extends number = 200> = Operation ext
   ? Body
   : never;
 
+export type ResponseContent<Operation, Status extends number = 200> = Operation extends {
+  responses: {
+    [Key in Status]: {
+      content: infer Content;
+    };
+  };
+}
+  ? Content extends {
+      "application/json": infer Body;
+    }
+    ? Body
+    : Content extends {
+          "text/json": infer Body;
+        }
+      ? Body
+      : Content extends {
+            "text/plain": infer Body;
+          }
+        ? Body
+        : never
+  : never;
+
 export type OperationQuery<Operation> = Operation extends {
   parameters: {
     query?: infer Query;
