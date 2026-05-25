@@ -1,5 +1,7 @@
 # digihoo
 
+[![npm version](https://img.shields.io/npm/v/%40openhoo%2Fdigihoo?label=npm)](https://www.npmjs.com/package/@openhoo/digihoo)
+
 TypeScript SDK for Digi-Key API authentication and the Product Information APIs.
 
 This package is built against Digi-Key's official documentation:
@@ -160,3 +162,15 @@ npm run verify
 ```
 
 `npm run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
+
+## Credits
+
+This SDK is built from Digi-Key's public API documentation and Swagger definitions. Digi-Key product names, API names, and documentation are owned by Digi-Key and their respective owners.
+
+The generated TypeScript schema types are produced with `openapi-typescript` after converting Digi-Key's Swagger definitions with `swagger2openapi`.
+
+This project is not affiliated with, endorsed by, or sponsored by Digi-Key.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
