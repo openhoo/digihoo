@@ -1,4 +1,5 @@
 import { DigiKeyAuthClient, type DigiKeyAuthClientOptions } from "./auth";
+import { BarcodingClient } from "./barcoding";
 import type { DigiKeyEnvironment } from "./constants";
 import { DigiKeyHttpClient } from "./http";
 import { MyListsClient } from "./mylists";
@@ -35,6 +36,7 @@ export interface DigiKeyClientOptions {
 
 export class DigiKeyClient {
   readonly auth?: DigiKeyAuthClient;
+  readonly barcoding: BarcodingClient;
   readonly myLists: MyListsClient;
   readonly ordering: OrderingClient;
   readonly productSearch: ProductSearchClient;
@@ -63,6 +65,7 @@ export class DigiKeyClient {
       onResponse: options.onResponse,
     });
 
+    this.barcoding = new BarcodingClient(http);
     this.myLists = new MyListsClient(http);
     this.ordering = new OrderingClient(http);
     this.productSearch = new ProductSearchClient(http);

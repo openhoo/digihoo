@@ -8,6 +8,22 @@ export type {
   RefreshTokenOptions,
 } from "./auth";
 export { DigiKeyAuthClient, DigiKeyRefreshTokenProvider } from "./auth";
+export type {
+  BarcodeOptions,
+  BarcodingOperationsMap,
+  BarcodingSchemas,
+  GetPackingListByPoNumberResponse,
+  GetPackingListBySalesOrderIdResponse,
+  GetPackingListResponse,
+  PackingListOperationsMap,
+  PackingListOptions,
+  PackingListSchemas,
+  PackList2DBarcodeResponse,
+  PackListBarcodeResponse,
+  Product2DBarcodeResponse,
+  ProductBarcodeResponse,
+} from "./barcoding";
+export { BarcodingClient } from "./barcoding";
 export type { DigiKeyClientOptions } from "./client";
 export { DigiKeyClient } from "./client";
 export type { DigiKeyEnvironment } from "./constants";
