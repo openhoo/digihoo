@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import type { FetchLike } from "../src";
 import {
   type DigiKeyApiError,
@@ -108,23 +108,23 @@ describe("DigiKeyAuthClient", () => {
 
       const first = auth.getAccessToken({ timeoutMs: 10 });
       const second = auth.getAccessToken({ timeoutMs: 20 });
+      const firstRejection = first.catch((error: unknown) => error);
+      const secondRejection = second.catch((error: unknown) => error);
       expect(fetch).toHaveBeenCalledTimes(2);
 
-      const firstAssertion = expect(first).rejects.toMatchObject({
+      await advanceTimersByTime(10);
+      expect(await firstRejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 10ms.",
         isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
-      const secondAssertion = expect(second).rejects.toMatchObject({
+
+      await advanceTimersByTime(10);
+      expect(await secondRejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 20ms.",
         isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
-
-      await vi.advanceTimersByTimeAsync(10);
-      await firstAssertion;
-      await vi.advanceTimersByTimeAsync(10);
-      await secondAssertion;
     } finally {
       vi.useRealTimers();
     }
@@ -363,15 +363,15 @@ describe("DigiKeyAuthClient", () => {
       });
 
       const request = auth.getClientCredentialsToken({ timeoutMs: 25 });
-      const assertion = expect(request).rejects.toMatchObject({
+      const rejection = request.catch((error: unknown) => error);
+
+      await advanceTimersByTime(25);
+      expect(await rejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 25ms.",
         isTimeout: true,
         method: "POST",
       } satisfies Partial<DigiKeyNetworkError>);
-
-      await vi.advanceTimersByTimeAsync(25);
-      await assertion;
     } finally {
       vi.useRealTimers();
     }
@@ -398,14 +398,15 @@ describe("DigiKeyAuthClient", () => {
       });
 
       const request = provider.getAccessToken({ timeoutMs: 35 });
-      const assertion = expect(request).rejects.toMatchObject({
+      const rejection = request.catch((error: unknown) => error);
+
+      await advanceTimersByTime(35);
+      expect(await rejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 35ms.",
         isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
 
-      await vi.advanceTimersByTimeAsync(35);
-      await assertion;
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(String(fetch.mock.calls[0]?.[1]?.body)).toContain("grant_type=refresh_token");
 
@@ -453,8 +454,7 @@ describe("DigiKeyAuthClient", () => {
   });
 
   it("requires an explicit fetch implementation when global fetch is unavailable", () => {
-    vi.stubGlobal("fetch", undefined);
-    try {
+    withGlobalFetch(undefined, () => {
       expect(
         () =>
           new DigiKeyAuthClient({
@@ -462,11 +462,40 @@ describe("DigiKeyAuthClient", () => {
             clientSecret: "client-secret",
           }),
       ).toThrow("A fetch implementation is required in this runtime.");
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    });
   });
 });
+
+async function advanceTimersByTime(delayMs: number): Promise<void> {
+  await flushMicrotasks();
+  vi.advanceTimersByTime(delayMs);
+  await flushMicrotasks();
+}
+
+async function flushMicrotasks(): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await Promise.resolve();
+  }
+}
+
+function withGlobalFetch(fetch: typeof globalThis.fetch | undefined, run: () => void): void {
+  const originalFetch = globalThis.fetch;
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    writable: true,
+    value: fetch,
+  });
+
+  try {
+    run();
+  } finally {
+    Object.defineProperty(globalThis, "fetch", {
+      configurable: true,
+      writable: true,
+      value: originalFetch,
+    });
+  }
+}
 
 function jsonResponse(body: unknown, status = 200, statusText = "OK"): Response {
   return new Response(JSON.stringify(body), {

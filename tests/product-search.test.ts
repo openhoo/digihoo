@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import type {
   FetchLike,
   ManufacturersOptions,
@@ -403,8 +403,7 @@ describe("ProductSearchClient", () => {
   });
 
   it("requires an explicit fetch implementation when global fetch is unavailable", () => {
-    vi.stubGlobal("fetch", undefined);
-    try {
+    withGlobalFetch(undefined, () => {
       expect(
         () =>
           new DigiKeyClient({
@@ -412,9 +411,7 @@ describe("ProductSearchClient", () => {
             accessToken: "access-token",
           }),
       ).toThrow("A fetch implementation is required in this runtime.");
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    });
   });
 
   it("wraps caller-aborted API requests in DigiKeyNetworkError", async () => {
@@ -560,7 +557,7 @@ describe("ProductSearchClient", () => {
     });
 
     await expect(
-      client.productSearch.productDetails("P1", { accountId: "account-id" }),
+      client.productSearch.productDetails("P1", { accountId: "account-id" }) as Promise<unknown>,
     ).resolves.toEqual({
       DigiKeyProductNumber: "P1",
     });
@@ -596,7 +593,7 @@ describe("ProductSearchClient", () => {
       fetch,
     });
 
-    await expect(client.productSearch.productDetails("P1")).resolves.toEqual({
+    await expect(client.productSearch.productDetails("P1") as Promise<unknown>).resolves.toEqual({
       DigiKeyProductNumber: "P1",
     });
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -615,15 +612,16 @@ describe("ProductSearchClient", () => {
       const client = testClient(fetch);
 
       const request = client.productSearch.categories({ timeoutMs: 50 });
-      const assertion = expect(request).rejects.toMatchObject({
+      const rejection = request.catch((error: unknown) => error);
+
+      await advanceTimersByTime(50);
+      expect(await rejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 50ms.",
         isTimeout: true,
         method: "GET",
       } satisfies Partial<DigiKeyNetworkError>);
 
-      await vi.advanceTimersByTimeAsync(50);
-      await assertion;
       expect(fetch).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
@@ -648,15 +646,15 @@ describe("ProductSearchClient", () => {
       });
 
       const request = client.productSearch.productDetails("P1", { timeoutMs: 75 });
-      const assertion = expect(request).rejects.toMatchObject({
+      const rejection = request.catch((error: unknown) => error);
+
+      await advanceTimersByTime(75);
+      expect(await rejection).toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 75ms.",
         isTimeout: true,
         method: "POST",
       } satisfies Partial<DigiKeyNetworkError>);
-
-      await vi.advanceTimersByTimeAsync(75);
-      await assertion;
 
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(String(fetch.mock.calls[0]?.[0])).toBe(
@@ -841,6 +839,37 @@ function testClient(fetch: FetchLike): DigiKeyClient {
     },
     fetch,
   });
+}
+
+async function advanceTimersByTime(delayMs: number): Promise<void> {
+  await flushMicrotasks();
+  vi.advanceTimersByTime(delayMs);
+  await flushMicrotasks();
+}
+
+async function flushMicrotasks(): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await Promise.resolve();
+  }
+}
+
+function withGlobalFetch(fetch: typeof globalThis.fetch | undefined, run: () => void): void {
+  const originalFetch = globalThis.fetch;
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    writable: true,
+    value: fetch,
+  });
+
+  try {
+    run();
+  } finally {
+    Object.defineProperty(globalThis, "fetch", {
+      configurable: true,
+      writable: true,
+      value: originalFetch,
+    });
+  }
 }
 
 function jsonResponse(
