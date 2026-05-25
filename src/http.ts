@@ -264,7 +264,7 @@ export class DigiKeyHttpClient {
       !accountId
     ) {
       throw new DigiKeyConfigurationError(
-        "X-DIGIKEY-Account-Id is required for this Digi-Key ProductSearch endpoint when using 2-legged OAuth. Configure accountId on the client or pass it in the request options.",
+        "X-DIGIKEY-Account-Id is required for this Digi-Key endpoint when using 2-legged OAuth. Configure accountId on the client or pass it in the request options.",
       );
     }
 
@@ -274,7 +274,7 @@ export class DigiKeyHttpClient {
       !accountId
     ) {
       throw new DigiKeyConfigurationError(
-        'This Digi-Key ProductSearch endpoint requires X-DIGIKEY-Account-Id when using 2-legged OAuth. Configure oauthFlow: "authorizationCode" for a 3-legged token, or configure accountId for 2-legged OAuth.',
+        'This Digi-Key endpoint requires X-DIGIKEY-Account-Id when using 2-legged OAuth. Configure oauthFlow: "authorizationCode" for a 3-legged token, or configure accountId for 2-legged OAuth.',
       );
     }
   }

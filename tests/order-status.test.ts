@@ -29,6 +29,40 @@ describe("OrderStatusClient", () => {
     expect(retrieveUrl.pathname).toBe("/orderstatus/v4/salesorder/123");
     expect(retrieveHeaders.has("X-DIGIKEY-Account-Id")).toBe(false);
   });
+
+  it("requires account id before calling 2-legged searchOrders", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({}));
+    const client = new DigiKeyClient({
+      clientId: "client-id",
+      accessToken: "access-token",
+      oauthFlow: "clientCredentials",
+      environment: "sandbox",
+      fetch,
+    });
+
+    await expect(client.orderStatus.searchOrders()).rejects.toMatchObject({
+      name: "DigiKeyConfigurationError",
+      message:
+        "X-DIGIKEY-Account-Id is required for this Digi-Key endpoint when using 2-legged OAuth. Configure accountId on the client or pass it in the request options.",
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("allows per-request account id for 2-legged searchOrders", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({ Orders: [] }));
+    const client = new DigiKeyClient({
+      clientId: "client-id",
+      accessToken: "access-token",
+      oauthFlow: "clientCredentials",
+      environment: "sandbox",
+      fetch,
+    });
+
+    await client.orderStatus.searchOrders({ accountId: "account-id" });
+
+    const headers = new Headers(fetch.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("X-DIGIKEY-Account-Id")).toBe("account-id");
+  });
 });
 
 function jsonResponse(body: unknown): Response {
