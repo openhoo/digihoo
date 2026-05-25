@@ -1,6 +1,7 @@
 import { DigiKeyAuthClient, type DigiKeyAuthClientOptions } from "./auth";
 import type { DigiKeyEnvironment } from "./constants";
 import { DigiKeyHttpClient } from "./http";
+import { MyListsClient } from "./mylists";
 import { ProductChangeNotificationsClient } from "./product-change-notifications";
 import { ProductSearchClient } from "./product-search";
 import type {
@@ -33,6 +34,7 @@ export interface DigiKeyClientOptions {
 
 export class DigiKeyClient {
   readonly auth?: DigiKeyAuthClient;
+  readonly myLists: MyListsClient;
   readonly productSearch: ProductSearchClient;
   readonly productChangeNotifications: ProductChangeNotificationsClient;
   readonly productInformation: {
@@ -59,6 +61,7 @@ export class DigiKeyClient {
       onResponse: options.onResponse,
     });
 
+    this.myLists = new MyListsClient(http);
     this.productSearch = new ProductSearchClient(http);
     this.productChangeNotifications = new ProductChangeNotificationsClient(http);
     this.productInformation = {

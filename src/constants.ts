@@ -7,6 +7,7 @@ export const DIGIKEY_API_BASE_URLS: Record<DigiKeyEnvironment, string> = {
 
 export const PRODUCT_SEARCH_BASE_PATH = "/products/v4";
 export const PRODUCT_CHANGE_NOTIFICATIONS_BASE_PATH = "/ChangeNotifications/v3";
+export const MYLISTS_BASE_PATH = "/mylists/v1";
 
 export function apiBaseUrlForEnvironment(environment: DigiKeyEnvironment): string {
   return DIGIKEY_API_BASE_URLS[environment];
