@@ -14,7 +14,7 @@ This package is built against Digi-Key's official documentation:
 ## Install
 
 ```sh
-npm install digihoo
+bun add @openhoo/digihoo
 ```
 
 ## OAuth client credentials
@@ -157,16 +157,16 @@ The SDK exports generated request and response types from Digi-Key's Swagger def
 ## Development
 
 ```sh
-npm install
-npm run generate:types
-npm run verify
+bun install
+bun run generate:types
+bun run verify
 ```
 
-`npm install` configures the tracked Git commit hook that validates commit messages with hooversion before Git accepts them.
+`bun install` configures the tracked Git commit hook that validates commit messages with hooversion before Git accepts them.
 
-`npm run check` runs type checking, unit tests with V8 coverage thresholds, and the package build. Coverage includes runtime source files and excludes generated OpenAPI types, type-only modules, and barrel exports.
+`bun run check` runs type checking, unit tests with V8 coverage thresholds, and the package build. Coverage includes runtime source files and excludes generated OpenAPI types, type-only modules, and barrel exports.
 
-`npm run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
+`bun run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
 
 ## Credits
 
