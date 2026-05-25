@@ -63,6 +63,16 @@ export type {
 } from "./mylists";
 export { MyListsClient } from "./mylists";
 export type {
+  OrderStatusOperations,
+  OrderStatusRequestOptions,
+  OrderStatusSchemas,
+  RetrieveSalesOrderOptions,
+  RetrieveSalesOrderResponse,
+  SearchOrdersOptions,
+  SearchOrdersResponse,
+} from "./order-status";
+export { OrderStatusClient } from "./order-status";
+export type {
   OrderingOperations,
   OrderingSchemas,
   OrderOptions,
