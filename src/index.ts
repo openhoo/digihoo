@@ -47,6 +47,14 @@ export type {
 } from "./mylists";
 export { MyListsClient } from "./mylists";
 export type {
+  OrderingOperations,
+  OrderingSchemas,
+  OrderOptions,
+  OrderRequest,
+  OrderResponse,
+} from "./ordering";
+export { OrderingClient } from "./ordering";
+export type {
   ProductChangeNotificationOperations,
   ProductChangeNotificationSchemas,
   ProductChangeNotificationsOptions,
