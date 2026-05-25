@@ -451,23 +451,25 @@ export type JsonResponse<Operation, Status extends number = 200> = Operation ext
 export type ResponseContent<Operation, Status extends number = 200> = Operation extends {
   responses: {
     [Key in Status]: {
-      content: infer Content;
+      content?: infer Content;
     };
   };
 }
-  ? Content extends {
-      "application/json": infer Body;
-    }
-    ? Body
+  ? [Content] extends [never]
+    ? undefined
     : Content extends {
-          "text/json": infer Body;
+          "application/json": infer Body;
         }
       ? Body
       : Content extends {
-            "text/plain": infer Body;
+            "text/json": infer Body;
           }
         ? Body
-        : never
+        : Content extends {
+              "text/plain": infer Body;
+            }
+          ? Body
+          : undefined
   : never;
 
 export type OperationQuery<Operation> = Operation extends {
