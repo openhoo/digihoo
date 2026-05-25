@@ -161,6 +161,8 @@ npm run generate:types
 npm run verify
 ```
 
+`npm install` configures the tracked Git commit hook that validates commit messages with hooversion before Git accepts them.
+
 `npm run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
 
 ## Credits
