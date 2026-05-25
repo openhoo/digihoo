@@ -9,9 +9,18 @@ describe("OrderingClient", () => {
     const body = {
       PurchaseOrderNumber: "PO-1",
       Currency: "USD",
-      ShippingContact: {},
-      LineItems: [],
-    } as unknown as OrderRequest;
+      ShippingContact: {
+        Name: "Jane Smith",
+        Address: {},
+      },
+      LineItems: [
+        {
+          DigiKeyPartNumber: "P1",
+          RequestedQuantity: 1,
+          UnitPrice: 1,
+        },
+      ],
+    } satisfies OrderRequest;
 
     await client.ordering.order(body);
 
@@ -26,6 +35,21 @@ describe("OrderingClient", () => {
     const client = new DigiKeyClient({
       clientId: "client-id",
       accessToken: "access-token",
+      environment: "sandbox",
+      fetch,
+    });
+
+    await expect(client.ordering.order()).rejects.toMatchObject({
+      name: "DigiKeyConfigurationError",
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects Ordering when the client is configured for 2-legged OAuth", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({}));
+    const client = new DigiKeyClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
       environment: "sandbox",
       fetch,
     });
