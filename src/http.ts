@@ -36,7 +36,7 @@ export interface DigiKeyHttpClientOptions {
 }
 
 export interface HttpRequestOptions {
-  method: "GET" | "POST";
+  method: "DELETE" | "GET" | "POST" | "PUT";
   basePath: string;
   path: string;
   query?: QueryParameters;
