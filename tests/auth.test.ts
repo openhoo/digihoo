@@ -1,20 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
-import { DigiKeyAuthClient, DigiKeyApiError, DigiKeyNetworkError, DigiKeyRefreshTokenProvider } from "../src";
 import type { FetchLike } from "../src";
+import {
+  type DigiKeyApiError,
+  DigiKeyAuthClient,
+  type DigiKeyNetworkError,
+  DigiKeyRefreshTokenProvider,
+} from "../src";
 
 describe("DigiKeyAuthClient", () => {
   it("builds Digi-Key authorization URLs", () => {
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      environment: "sandbox"
+      environment: "sandbox",
     });
 
     const url = new URL(
       auth.buildAuthorizationUrl({
         redirectUri: "https://example.com/callback",
-        state: "csrf"
-      })
+        state: "csrf",
+      }),
     );
 
     expect(url.origin).toBe("https://sandbox-api.digikey.com");
@@ -30,15 +35,15 @@ describe("DigiKeyAuthClient", () => {
       jsonResponse({
         access_token: "access-token",
         token_type: "Bearer",
-        expires_in: 3600
-      })
+        expires_in: 3600,
+      }),
     );
 
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(auth.getAccessToken()).resolves.toBe("access-token");
@@ -48,9 +53,11 @@ describe("DigiKeyAuthClient", () => {
     const [input, init] = fetch.mock.calls[0]!;
     expect(String(input)).toBe("https://sandbox-api.digikey.com/v1/oauth2/token");
     expect(init?.method).toBe("POST");
-    expect(new Headers(init?.headers).get("Content-Type")).toBe("application/x-www-form-urlencoded");
+    expect(new Headers(init?.headers).get("Content-Type")).toBe(
+      "application/x-www-form-urlencoded",
+    );
     expect(String(init?.body)).toBe(
-      "grant_type=client_credentials&client_id=client-id&client_secret=client-secret"
+      "grant_type=client_credentials&client_id=client-id&client_secret=client-secret",
     );
   });
 
@@ -60,12 +67,12 @@ describe("DigiKeyAuthClient", () => {
       () =>
         new Promise((resolve) => {
           resolveResponse = resolve;
-        })
+        }),
     );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
 
     const first = auth.getAccessToken();
@@ -75,8 +82,8 @@ describe("DigiKeyAuthClient", () => {
     resolveResponse(
       jsonResponse({
         access_token: "access-token",
-        expires_in: 3600
-      })
+        expires_in: 3600,
+      }),
     );
 
     await expect(Promise.all([first, second])).resolves.toEqual(["access-token", "access-token"]);
@@ -91,12 +98,12 @@ describe("DigiKeyAuthClient", () => {
         (_input, init) =>
           new Promise((_resolve, reject) => {
             init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-          })
+          }),
       );
       const auth = new DigiKeyAuthClient({
         clientId: "client-id",
         clientSecret: "client-secret",
-        fetch
+        fetch,
       });
 
       const first = auth.getAccessToken({ timeoutMs: 10 });
@@ -106,12 +113,12 @@ describe("DigiKeyAuthClient", () => {
       const firstAssertion = expect(first).rejects.toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 10ms.",
-        isTimeout: true
+        isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
       const secondAssertion = expect(second).rejects.toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 20ms.",
-        isTimeout: true
+        isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
 
       await vi.advanceTimersByTimeAsync(10);
@@ -128,23 +135,23 @@ describe("DigiKeyAuthClient", () => {
       jsonResponse({
         access_token: "access-token",
         refresh_token: "refresh-token",
-        expires_in: 900
-      })
+        expires_in: 900,
+      }),
     );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
 
     await auth.exchangeAuthorizationCode({
       code: "code",
-      redirectUri: "https://example.com/callback"
+      redirectUri: "https://example.com/callback",
     });
 
     const [, init] = fetch.mock.calls[0]!;
     expect(String(init?.body)).toBe(
-      "grant_type=authorization_code&client_id=client-id&client_secret=client-secret&code=code&redirect_uri=https%3A%2F%2Fexample.com%2Fcallback"
+      "grant_type=authorization_code&client_id=client-id&client_secret=client-secret&code=code&redirect_uri=https%3A%2F%2Fexample.com%2Fcallback",
     );
   });
 
@@ -153,22 +160,22 @@ describe("DigiKeyAuthClient", () => {
       jsonResponse(
         {
           ErrorMessage: "invalid_client",
-          RequestId: "request-id"
+          RequestId: "request-id",
         },
         401,
-        "Unauthorized"
-      )
+        "Unauthorized",
+      ),
     );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
 
     await expect(auth.getAccessToken()).rejects.toMatchObject({
       name: "DigiKeyApiError",
       status: 401,
-      requestId: "request-id"
+      requestId: "request-id",
     } satisfies Partial<DigiKeyApiError>);
   });
 
@@ -179,7 +186,7 @@ describe("DigiKeyAuthClient", () => {
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
 
     await expect(auth.getAccessToken()).rejects.toMatchObject({
@@ -187,10 +194,9 @@ describe("DigiKeyAuthClient", () => {
       message: "Digi-Key request failed before receiving a response: socket closed",
       method: "POST",
       isTimeout: false,
-      isAbort: false
+      isAbort: false,
     } satisfies Partial<DigiKeyNetworkError>);
   });
-
 
   it("refreshes access tokens and keeps the latest rotated refresh token", async () => {
     const onToken = vi.fn();
@@ -200,26 +206,26 @@ describe("DigiKeyAuthClient", () => {
         jsonResponse({
           access_token: "access-token-1",
           refresh_token: "refresh-token-2",
-          expires_in: 1
-        })
+          expires_in: 1,
+        }),
       )
       .mockResolvedValueOnce(
         jsonResponse({
           access_token: "access-token-2",
           refresh_token: "refresh-token-3",
-          expires_in: 1
-        })
+          expires_in: 1,
+        }),
       );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
     const provider = new DigiKeyRefreshTokenProvider({
       authClient: auth,
       refreshToken: "refresh-token-1",
       clockSkewMs: 60_000,
-      onToken
+      onToken,
     });
 
     await expect(provider.getAccessToken()).resolves.toBe("access-token-1");
@@ -238,17 +244,17 @@ describe("DigiKeyAuthClient", () => {
       () =>
         new Promise((resolve) => {
           resolveResponse = resolve;
-        })
+        }),
     );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
     const provider = new DigiKeyRefreshTokenProvider({
       authClient: auth,
       refreshToken: "refresh-token-1",
-      onToken
+      onToken,
     });
 
     const first = provider.getAccessToken();
@@ -260,8 +266,8 @@ describe("DigiKeyAuthClient", () => {
       jsonResponse({
         access_token: "access-token",
         refresh_token: "refresh-token-2",
-        expires_in: 3600
-      })
+        expires_in: 3600,
+      }),
     );
 
     await expect(Promise.all([first, second])).resolves.toEqual(["access-token", "access-token"]);
@@ -277,29 +283,31 @@ describe("DigiKeyAuthClient", () => {
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
     const providerFromExpiresAt = new DigiKeyRefreshTokenProvider({
       authClient: auth,
       refreshToken: "refresh-token",
       accessToken: "cached-token",
-      expiresAt: Date.now() + 60_000
+      expiresAt: Date.now() + 60_000,
     });
     const providerFromExpiresIn = new DigiKeyRefreshTokenProvider({
       authClient: auth,
       refreshToken: "refresh-token",
       accessToken: "cached-token-from-expires-in",
-      expiresIn: 60
+      expiresIn: 60,
     });
     const providerFromDate = new DigiKeyRefreshTokenProvider({
       authClient: auth,
       refreshToken: "refresh-token",
       accessToken: "cached-token-from-date",
-      expiresAt: new Date(Date.now() + 60_000)
+      expiresAt: new Date(Date.now() + 60_000),
     });
 
     await expect(providerFromExpiresAt.getAccessToken()).resolves.toBe("cached-token");
-    await expect(providerFromExpiresIn.getAccessToken()).resolves.toBe("cached-token-from-expires-in");
+    await expect(providerFromExpiresIn.getAccessToken()).resolves.toBe(
+      "cached-token-from-expires-in",
+    );
     await expect(providerFromDate.getAccessToken()).resolves.toBe("cached-token-from-date");
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -310,31 +318,31 @@ describe("DigiKeyAuthClient", () => {
       () =>
         new Promise((resolve) => {
           resolveResponse = resolve;
-        })
+        }),
     );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
     const provider = new DigiKeyRefreshTokenProvider({
       authClient: auth,
-      refreshToken: "refresh-token"
+      refreshToken: "refresh-token",
     });
     const controller = new AbortController();
     controller.abort(new DOMException("caller aborted", "AbortError"));
 
     await expect(provider.getAccessToken({ signal: controller.signal })).rejects.toMatchObject({
       name: "DigiKeyNetworkError",
-      isAbort: true
+      isAbort: true,
     } satisfies Partial<DigiKeyNetworkError>);
     expect(fetch).toHaveBeenCalledTimes(1);
 
     resolveResponse(
       jsonResponse({
         access_token: "access-token",
-        expires_in: 3600
-      })
+        expires_in: 3600,
+      }),
     );
     await expect(provider.getAccessToken()).resolves.toBe("access-token");
   });
@@ -346,12 +354,12 @@ describe("DigiKeyAuthClient", () => {
         (_input, init) =>
           new Promise((_resolve, reject) => {
             init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-          })
+          }),
       );
       const auth = new DigiKeyAuthClient({
         clientId: "client-id",
         clientSecret: "client-secret",
-        fetch
+        fetch,
       });
 
       const request = auth.getClientCredentialsToken({ timeoutMs: 25 });
@@ -359,7 +367,7 @@ describe("DigiKeyAuthClient", () => {
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 25ms.",
         isTimeout: true,
-        method: "POST"
+        method: "POST",
       } satisfies Partial<DigiKeyNetworkError>);
 
       await vi.advanceTimersByTimeAsync(25);
@@ -377,23 +385,23 @@ describe("DigiKeyAuthClient", () => {
         () =>
           new Promise((resolve) => {
             resolveResponse = resolve;
-          })
+          }),
       );
       const auth = new DigiKeyAuthClient({
         clientId: "client-id",
         clientSecret: "client-secret",
-        fetch
+        fetch,
       });
       const provider = new DigiKeyRefreshTokenProvider({
         authClient: auth,
-        refreshToken: "refresh-token"
+        refreshToken: "refresh-token",
       });
 
       const request = provider.getAccessToken({ timeoutMs: 35 });
       const assertion = expect(request).rejects.toMatchObject({
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 35ms.",
-        isTimeout: true
+        isTimeout: true,
       } satisfies Partial<DigiKeyNetworkError>);
 
       await vi.advanceTimersByTimeAsync(35);
@@ -405,8 +413,8 @@ describe("DigiKeyAuthClient", () => {
         jsonResponse({
           access_token: "access-token",
           refresh_token: "refresh-token-2",
-          expires_in: 3600
-        })
+          expires_in: 3600,
+        }),
       );
 
       await expect(provider.getAccessToken()).resolves.toBe("access-token");
@@ -425,21 +433,21 @@ describe("DigiKeyAuthClient", () => {
           status: 200,
           statusText: "OK",
           headers: {
-            "Content-Type": "text/plain"
-          }
-        })
+            "Content-Type": "text/plain",
+          },
+        }),
       );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
-      fetch
+      fetch,
     });
 
     await expect(auth.getClientCredentialsToken()).rejects.toThrow(
-      "Digi-Key OAuth response did not include an access_token."
+      "Digi-Key OAuth response did not include an access_token.",
     );
     await expect(auth.getClientCredentialsToken()).rejects.toThrow(
-      "Digi-Key OAuth response did not include an access_token."
+      "Digi-Key OAuth response did not include an access_token.",
     );
     expect(fetch).toHaveBeenCalledTimes(2);
   });
@@ -451,8 +459,8 @@ describe("DigiKeyAuthClient", () => {
         () =>
           new DigiKeyAuthClient({
             clientId: "client-id",
-            clientSecret: "client-secret"
-          })
+            clientSecret: "client-secret",
+          }),
       ).toThrow("A fetch implementation is required in this runtime.");
     } finally {
       vi.unstubAllGlobals();
@@ -465,7 +473,7 @@ function jsonResponse(body: unknown, status = 200, statusText = "OK"): Response 
     status,
     statusText,
     headers: {
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   });
 }

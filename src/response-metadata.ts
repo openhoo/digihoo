@@ -30,7 +30,7 @@ export function responseMetadata(options: {
     status: options.response.status,
     statusText: options.response.statusText,
     headers: options.response.headers,
-    rateLimit: parseRateLimitHeaders(options.response.headers)
+    rateLimit: parseRateLimitHeaders(options.response.headers),
   };
 }
 
@@ -44,7 +44,7 @@ export function parseRateLimitHeaders(headers: Headers): DigiKeyRateLimit {
     burstRemaining: parseOptionalNumber(headers.get("X-BurstLimit-Remaining")),
     burstReset: parseOptionalNumber(headers.get("X-BurstLimit-Reset")),
     burstResetTime: parseOptionalString(headers.get("X-BurstLimit-ResetTime")),
-    retryAfter: parseOptionalNumber(headers.get("Retry-After"))
+    retryAfter: parseOptionalNumber(headers.get("Retry-After")),
   };
 }
 

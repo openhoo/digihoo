@@ -1,4 +1,4 @@
-import { parseRateLimitHeaders, type DigiKeyRateLimit } from "./response-metadata";
+import { type DigiKeyRateLimit, parseRateLimitHeaders } from "./response-metadata";
 
 export interface DigiKeyApiErrorOptions {
   message: string;
@@ -69,18 +69,16 @@ export class DigiKeyConfigurationError extends Error {
   }
 }
 
-export function apiErrorMessage(
-  status: number,
-  statusText: string,
-  details: unknown
-): string {
+export function apiErrorMessage(status: number, statusText: string, details: unknown): string {
   const detail =
     readStringProperty(details, "detail") ??
     readStringProperty(details, "ErrorMessage") ??
     readStringProperty(details, "ErrorDetails") ??
     readStringProperty(details, "title");
 
-  return detail ? `Digi-Key API error ${status}: ${detail}` : `Digi-Key API error ${status}: ${statusText}`;
+  return detail
+    ? `Digi-Key API error ${status}: ${detail}`
+    : `Digi-Key API error ${status}: ${statusText}`;
 }
 
 function readStringProperty(value: unknown, property: string): string | undefined {

@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  DigiKeyApiError,
-  DigiKeyAuthClient,
-  DigiKeyClient,
-  DigiKeyConfigurationError,
-  DigiKeyNetworkError,
-  DigiKeyRefreshTokenProvider,
-  parseRateLimitHeaders
-} from "../src";
-import { DigiKeyHttpClient } from "../src/http";
 import type {
   FetchLike,
   ManufacturersOptions,
   MediaOptions,
   ProductChangeNotificationsOptions,
   ProductPricingOptions,
-  TokenProvider
+  TokenProvider,
 } from "../src";
+import {
+  type DigiKeyApiError,
+  DigiKeyAuthClient,
+  DigiKeyClient,
+  type DigiKeyConfigurationError,
+  type DigiKeyNetworkError,
+  DigiKeyRefreshTokenProvider,
+  parseRateLimitHeaders,
+} from "../src";
+import { DigiKeyHttpClient } from "../src/http";
 
 describe("ProductSearchClient", () => {
   it("builds sandbox and production clients with productInformation aliases", async () => {
@@ -24,34 +24,40 @@ describe("ProductSearchClient", () => {
     const sandbox = DigiKeyClient.sandbox({
       clientId: "client-id",
       accessToken: "access-token",
-      fetch
+      fetch,
     });
     const production = DigiKeyClient.production({
       clientId: "client-id",
       accessToken: "access-token",
-      fetch
+      fetch,
     });
 
     expect(sandbox.productInformation.productSearch).toBe(sandbox.productSearch);
-    expect(sandbox.productInformation.productChangeNotifications).toBe(sandbox.productChangeNotifications);
+    expect(sandbox.productInformation.productChangeNotifications).toBe(
+      sandbox.productChangeNotifications,
+    );
 
     await sandbox.productSearch.categories();
     await production.productSearch.categories();
 
-    expect(new URL(String(fetch.mock.calls[0]?.[0])).origin).toBe("https://sandbox-api.digikey.com");
+    expect(new URL(String(fetch.mock.calls[0]?.[0])).origin).toBe(
+      "https://sandbox-api.digikey.com",
+    );
     expect(new URL(String(fetch.mock.calls[1]?.[0])).origin).toBe("https://api.digikey.com");
   });
 
   it("sends product details requests with OAuth, client id, locale, account id, and query parameters", async () => {
-    const fetch = vi.fn<FetchLike>(async () => jsonResponse({ DigiKeyProductNumber: "296-6501-1-ND" }));
+    const fetch = vi.fn<FetchLike>(async () =>
+      jsonResponse({ DigiKeyProductNumber: "296-6501-1-ND" }),
+    );
     const client = testClient(fetch);
 
     await client.productSearch.productDetails("296-6501-1-ND", {
       manufacturerId: "123",
       includes: "Parameters",
       headers: {
-        "X-Test": "value"
-      }
+        "X-Test": "value",
+      },
     });
 
     const [input, init] = fetch.mock.calls[0]!;
@@ -78,11 +84,11 @@ describe("ProductSearchClient", () => {
     await client.productSearch.keywordSearch(
       {
         Keywords: "microcontroller",
-        Limit: 10
+        Limit: 10,
       },
       {
-        includes: "Products(DigiKeyProductNumber)"
-      }
+        includes: "Products(DigiKeyProductNumber)",
+      },
     );
 
     const [input, init] = fetch.mock.calls[0]!;
@@ -103,7 +109,7 @@ describe("ProductSearchClient", () => {
       clientId: "client-id",
       accessToken: "access-token",
       apiBaseUrl: "https://api.digikey.test/root/",
-      fetch
+      fetch,
     });
 
     await http.request({
@@ -113,8 +119,8 @@ describe("ProductSearchClient", () => {
       query: {
         value: ["a", null, "b"],
         enabled: true,
-        omitted: undefined
-      }
+        omitted: undefined,
+      },
     });
 
     const [input] = fetch.mock.calls[0]!;
@@ -131,54 +137,78 @@ describe("ProductSearchClient", () => {
     const client = testClient(fetch);
 
     const calls: Array<[string, () => Promise<unknown>, string, Record<string, string>]> = [
-      ["manufacturers", () => client.productSearch.manufacturers(), "/products/v4/search/manufacturers", {}],
+      [
+        "manufacturers",
+        () => client.productSearch.manufacturers(),
+        "/products/v4/search/manufacturers",
+        {},
+      ],
       ["categories", () => client.productSearch.categories(), "/products/v4/search/categories", {}],
-      ["categoryById", () => client.productSearch.categoryById(32), "/products/v4/search/categories/32", {}],
+      [
+        "categoryById",
+        () => client.productSearch.categoryById(32),
+        "/products/v4/search/categories/32",
+        {},
+      ],
       [
         "digiReelPricing",
         () => client.productSearch.digiReelPricing("P1", 100),
         "/products/v4/search/P1/digireelpricing",
-        { requestedQuantity: "100" }
+        { requestedQuantity: "100" },
       ],
       [
         "recommendedProducts",
-        () => client.productSearch.recommendedProducts("P1", { limit: 3, searchOptionList: ["A", "B"] }),
+        () =>
+          client.productSearch.recommendedProducts("P1", {
+            limit: 3,
+            searchOptionList: ["A", "B"],
+          }),
         "/products/v4/search/P1/recommendedproducts",
-        { limit: "3", searchOptionList: "A,B" }
+        { limit: "3", searchOptionList: "A,B" },
       ],
       [
         "substitutions",
         () => client.productSearch.substitutions("P1", { includes: "Products" }),
         "/products/v4/search/P1/substitutions",
-        { includes: "Products" }
+        { includes: "Products" },
       ],
-      ["associations", () => client.productSearch.associations("P1"), "/products/v4/search/P1/associations", {}],
+      [
+        "associations",
+        () => client.productSearch.associations("P1"),
+        "/products/v4/search/P1/associations",
+        {},
+      ],
       [
         "packageTypeByQuantity",
         () => client.productSearch.packageTypeByQuantity("P1", 50, { packagingPreference: "DKR" }),
         "/products/v4/search/packagetypebyquantity/P1",
-        { requestedQuantity: "50", packagingPreference: "DKR" }
+        { requestedQuantity: "50", packagingPreference: "DKR" },
       ],
       ["media", () => client.productSearch.media("P1"), "/products/v4/search/P1/media", {}],
       [
         "productPricing",
         () => client.productSearch.productPricing("P1", { limit: 5, offset: 2, inStock: true }),
         "/products/v4/search/P1/pricing",
-        { limit: "5", offset: "2", inStock: "true" }
+        { limit: "5", offset: "2", inStock: "true" },
       ],
-      ["productPricingWithoutOptions", () => client.productSearch.productPricing("P1"), "/products/v4/search/P1/pricing", {}],
+      [
+        "productPricingWithoutOptions",
+        () => client.productSearch.productPricing("P1"),
+        "/products/v4/search/P1/pricing",
+        {},
+      ],
       [
         "alternatePackaging",
         () => client.productSearch.alternatePackaging("P1"),
         "/products/v4/search/P1/alternatepackaging",
-        {}
+        {},
       ],
       [
         "pricingOptionsByQuantity",
         () => client.productSearch.pricingOptionsByQuantity("P1", 10, { manufacturerId: "42" }),
         "/products/v4/search/P1/pricingbyquantity/10",
-        { manufacturerId: "42" }
-      ]
+        { manufacturerId: "42" },
+      ],
     ];
 
     for (const [name, call, pathname, query] of calls) {
@@ -200,15 +230,15 @@ describe("ProductSearchClient", () => {
         {
           title: "Too Many Requests",
           detail: "Rate limit exceeded",
-          correlationId: "correlation-id"
+          correlationId: "correlation-id",
         },
         429,
         "Too Many Requests",
         {
           "Retry-After": "30",
-          "X-BurstLimit-Reset": "30"
-        }
-      )
+          "X-BurstLimit-Reset": "30",
+        },
+      ),
     );
     const client = testClient(fetch);
 
@@ -218,8 +248,8 @@ describe("ProductSearchClient", () => {
       requestId: "correlation-id",
       rateLimit: {
         retryAfter: 30,
-        burstReset: 30
-      }
+        burstReset: 30,
+      },
     } satisfies Partial<DigiKeyApiError>);
   });
 
@@ -238,20 +268,20 @@ describe("ProductSearchClient", () => {
     const fetch = vi.fn<FetchLike>(async () => jsonResponse({}));
     const client = testClient(fetch);
 
-    expect(() => client.productSearch.keywordSearch({ Keywords: "microcontroller", Limit: 51 })).toThrow(
-      "Limit must be an integer between 1 and 50."
-    );
+    expect(() =>
+      client.productSearch.keywordSearch({ Keywords: "microcontroller", Limit: 51 }),
+    ).toThrow("Limit must be an integer between 1 and 50.");
     expect(() => client.productSearch.keywordSearch({ Keywords: "x".repeat(251) })).toThrow(
-      "Keywords must be 250 characters or fewer."
+      "Keywords must be 250 characters or fewer.",
     );
-    expect(() => client.productSearch.keywordSearch({ Keywords: "microcontroller", Offset: -1 })).toThrow(
-      "Offset must be a non-negative integer."
-    );
+    expect(() =>
+      client.productSearch.keywordSearch({ Keywords: "microcontroller", Offset: -1 }),
+    ).toThrow("Offset must be a non-negative integer.");
     expect(() => client.productSearch.productPricing("P1", { limit: 11 })).toThrow(
-      "limit must be an integer between 1 and 10."
+      "limit must be an integer between 1 and 10.",
     );
     expect(() => client.productSearch.productPricing("P1", { offset: -1 })).toThrow(
-      "offset must be a non-negative integer."
+      "offset must be a non-negative integer.",
     );
 
     expect(fetch).not.toHaveBeenCalled();
@@ -262,33 +292,41 @@ describe("ProductSearchClient", () => {
       locale: {
         site: "UK",
         language: "EN",
-        currency: "USD"
-      }
+        currency: "USD",
+      },
     } satisfies ProductPricingOptions;
     const pcnOptions = {
       locale: {
         site: "PH",
         language: "en",
         currency: "PHP",
-        shipToCountry: "US"
-      }
+        shipToCountry: "US",
+      },
     } satisfies ProductChangeNotificationsOptions;
     const manufacturersOptions = {
       locale: {
         site: "US",
         language: "en",
-        currency: "USD"
-      }
+        currency: "USD",
+      },
     } satisfies ManufacturersOptions;
 
     expect(productPricingOptions.locale.language).toBe("EN");
     expect(pcnOptions.locale.site).toBe("PH");
     expect(manufacturersOptions.locale.language).toBe("en");
 
-    // @ts-expect-error ProductPricing documents uppercase locale language values.
-    const invalidProductPricingLanguage = { locale: { language: "en" } } satisfies ProductPricingOptions;
-    // @ts-expect-error ProductSearch endpoints do not document ship-to-country headers.
-    const invalidProductSearchShipToCountry = { locale: { shipToCountry: "US" } } satisfies ManufacturersOptions;
+    const invalidProductPricingLanguage = {
+      locale: {
+        // @ts-expect-error ProductPricing documents uppercase locale language values.
+        language: "en",
+      },
+    } satisfies ProductPricingOptions;
+    const invalidProductSearchShipToCountry = {
+      locale: {
+        // @ts-expect-error ProductSearch endpoints do not document ship-to-country headers.
+        shipToCountry: "US",
+      },
+    } satisfies ManufacturersOptions;
     // @ts-expect-error ProductSearch endpoints document lowercase locale language values.
     const invalidProductSearchLanguage = { locale: { language: "EN" } } satisfies MediaOptions;
     // @ts-expect-error Product Change Notifications does not document BR/VN locale sites.
@@ -311,7 +349,7 @@ describe("ProductSearchClient", () => {
       message: "Digi-Key request failed before receiving a response: network unreachable",
       method: "GET",
       isTimeout: false,
-      isAbort: false
+      isAbort: false,
     } satisfies Partial<DigiKeyNetworkError>);
   });
 
@@ -326,7 +364,7 @@ describe("ProductSearchClient", () => {
       message: "Digi-Key request failed before receiving a response.",
       method: "GET",
       isTimeout: false,
-      isAbort: false
+      isAbort: false,
     } satisfies Partial<DigiKeyNetworkError>);
   });
 
@@ -339,9 +377,9 @@ describe("ProductSearchClient", () => {
           status: 503,
           statusText: "Service Unavailable",
           headers: {
-            "Content-Type": "text/plain"
-          }
-        })
+            "Content-Type": "text/plain",
+          },
+        }),
       );
     const client = testClient(fetch);
 
@@ -350,7 +388,7 @@ describe("ProductSearchClient", () => {
       name: "DigiKeyApiError",
       message: "Digi-Key API error 503: Service Unavailable",
       status: 503,
-      details: "temporarily unavailable"
+      details: "temporarily unavailable",
     } satisfies Partial<DigiKeyApiError>);
   });
 
@@ -359,7 +397,7 @@ describe("ProductSearchClient", () => {
     const client = testClient(fetch);
 
     await expect(client.productSearch.categories({ timeoutMs: -1 })).rejects.toThrow(
-      "timeoutMs must be a non-negative finite number."
+      "timeoutMs must be a non-negative finite number.",
     );
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -371,8 +409,8 @@ describe("ProductSearchClient", () => {
         () =>
           new DigiKeyClient({
             clientId: "client-id",
-            accessToken: "access-token"
-          })
+            accessToken: "access-token",
+          }),
       ).toThrow("A fetch implementation is required in this runtime.");
     } finally {
       vi.unstubAllGlobals();
@@ -390,38 +428,32 @@ describe("ProductSearchClient", () => {
     await expect(
       client.productSearch.categories({
         signal: controller.signal,
-        timeoutMs: 1_000
-      })
+        timeoutMs: 1_000,
+      }),
     ).rejects.toMatchObject({
       name: "DigiKeyNetworkError",
       isAbort: true,
-      method: "GET"
+      method: "GET",
     } satisfies Partial<DigiKeyNetworkError>);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-
   it("emits response metadata with parsed rate-limit headers", async () => {
     const onResponse = vi.fn();
     const fetch = vi.fn<FetchLike>(async () =>
-      jsonResponse(
-        { Categories: [] },
-        200,
-        "OK",
-        {
-          "X-RateLimit-Limit": "1000",
-          "X-RateLimit-Remaining": "999",
-          "X-BurstLimit-Limit": "120",
-          "X-BurstLimit-Remaining": "119"
-        }
-      )
+      jsonResponse({ Categories: [] }, 200, "OK", {
+        "X-RateLimit-Limit": "1000",
+        "X-RateLimit-Remaining": "999",
+        "X-BurstLimit-Limit": "120",
+        "X-BurstLimit-Remaining": "119",
+      }),
     );
     const client = new DigiKeyClient({
       clientId: "client-id",
       accessToken: "access-token",
       environment: "sandbox",
       onResponse,
-      fetch
+      fetch,
     });
 
     await client.productSearch.categories();
@@ -435,15 +467,17 @@ describe("ProductSearchClient", () => {
           limit: 1000,
           remaining: 999,
           burstLimit: 120,
-          burstRemaining: 119
-        })
-      })
+          burstRemaining: 119,
+        }),
+      }),
     );
   });
 
   it("retries once with a forced token refresh after unauthorized responses", async () => {
     const tokenProvider = {
-      getAccessToken: vi.fn(async ({ forceRefresh } = {}) => (forceRefresh ? "fresh-token" : "stale-token"))
+      getAccessToken: vi.fn(async ({ forceRefresh } = {}) =>
+        forceRefresh ? "fresh-token" : "stale-token",
+      ),
     } satisfies TokenProvider;
     const fetch = vi
       .fn<FetchLike>()
@@ -453,32 +487,40 @@ describe("ProductSearchClient", () => {
       clientId: "client-id",
       tokenProvider,
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(client.productSearch.categories()).resolves.toEqual({ Categories: [] });
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe("Bearer stale-token");
-    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization")).toBe("Bearer fresh-token");
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe(
+      "Bearer stale-token",
+    );
+    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization")).toBe(
+      "Bearer fresh-token",
+    );
     expect(tokenProvider.getAccessToken).toHaveBeenNthCalledWith(1, { forceRefresh: false });
     expect(tokenProvider.getAccessToken).toHaveBeenNthCalledWith(2, { forceRefresh: true });
   });
 
   it("does not retry unauthorized responses when disabled for a request", async () => {
     const tokenProvider = {
-      getAccessToken: vi.fn(async () => "stale-token")
+      getAccessToken: vi.fn(async () => "stale-token"),
     } satisfies TokenProvider;
-    const fetch = vi.fn<FetchLike>(async () => jsonResponse({ detail: "expired" }, 401, "Unauthorized"));
+    const fetch = vi.fn<FetchLike>(async () =>
+      jsonResponse({ detail: "expired" }, 401, "Unauthorized"),
+    );
     const client = new DigiKeyClient({
       clientId: "client-id",
       tokenProvider,
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
-    await expect(client.productSearch.categories({ retryOnUnauthorized: false })).rejects.toMatchObject({
-      status: 401
+    await expect(
+      client.productSearch.categories({ retryOnUnauthorized: false }),
+    ).rejects.toMatchObject({
+      status: 401,
     });
 
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -491,11 +533,11 @@ describe("ProductSearchClient", () => {
       clientId: "client-id",
       clientSecret: "client-secret",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(client.productSearch.productDetails("P1")).rejects.toMatchObject({
-      name: "DigiKeyConfigurationError"
+      name: "DigiKeyConfigurationError",
     } satisfies Partial<DigiKeyConfigurationError>);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -506,23 +548,27 @@ describe("ProductSearchClient", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           access_token: "access-token",
-          expires_in: 600
-        })
+          expires_in: 600,
+        }),
       )
       .mockResolvedValueOnce(jsonResponse({ DigiKeyProductNumber: "P1" }));
     const client = new DigiKeyClient({
       clientId: "client-id",
       clientSecret: "client-secret",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
-    await expect(client.productSearch.productDetails("P1", { accountId: "account-id" })).resolves.toEqual({
-      DigiKeyProductNumber: "P1"
+    await expect(
+      client.productSearch.productDetails("P1", { accountId: "account-id" }),
+    ).resolves.toEqual({
+      DigiKeyProductNumber: "P1",
     });
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("X-DIGIKEY-Account-Id")).toBe("account-id");
+    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("X-DIGIKEY-Account-Id")).toBe(
+      "account-id",
+    );
   });
 
   it("requires an explicit OAuth flow or account id for raw-token ProductSearch endpoints that may need account id", async () => {
@@ -531,11 +577,11 @@ describe("ProductSearchClient", () => {
       clientId: "client-id",
       accessToken: "access-token",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(client.productSearch.productDetails("P1")).rejects.toMatchObject({
-      name: "DigiKeyConfigurationError"
+      name: "DigiKeyConfigurationError",
     } satisfies Partial<DigiKeyConfigurationError>);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -547,10 +593,12 @@ describe("ProductSearchClient", () => {
       accessToken: "access-token",
       oauthFlow: "authorizationCode",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
-    await expect(client.productSearch.productDetails("P1")).resolves.toEqual({ DigiKeyProductNumber: "P1" });
+    await expect(client.productSearch.productDetails("P1")).resolves.toEqual({
+      DigiKeyProductNumber: "P1",
+    });
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).has("X-DIGIKEY-Account-Id")).toBe(false);
   });
@@ -562,7 +610,7 @@ describe("ProductSearchClient", () => {
         (_input, init) =>
           new Promise((_resolve, reject) => {
             init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-          })
+          }),
       );
       const client = testClient(fetch);
 
@@ -571,7 +619,7 @@ describe("ProductSearchClient", () => {
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 50ms.",
         isTimeout: true,
-        method: "GET"
+        method: "GET",
       } satisfies Partial<DigiKeyNetworkError>);
 
       await vi.advanceTimersByTimeAsync(50);
@@ -589,14 +637,14 @@ describe("ProductSearchClient", () => {
         (_input, init) =>
           new Promise((_resolve, reject) => {
             init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
-          })
+          }),
       );
       const client = new DigiKeyClient({
         clientId: "client-id",
         clientSecret: "client-secret",
         environment: "sandbox",
         accountId: "account-id",
-        fetch
+        fetch,
       });
 
       const request = client.productSearch.productDetails("P1", { timeoutMs: 75 });
@@ -604,14 +652,16 @@ describe("ProductSearchClient", () => {
         name: "DigiKeyNetworkError",
         message: "Digi-Key request timed out after 75ms.",
         isTimeout: true,
-        method: "POST"
+        method: "POST",
       } satisfies Partial<DigiKeyNetworkError>);
 
       await vi.advanceTimersByTimeAsync(75);
       await assertion;
 
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(String(fetch.mock.calls[0]?.[0])).toBe("https://sandbox-api.digikey.com/v1/oauth2/token");
+      expect(String(fetch.mock.calls[0]?.[0])).toBe(
+        "https://sandbox-api.digikey.com/v1/oauth2/token",
+      );
     } finally {
       vi.useRealTimers();
     }
@@ -629,16 +679,16 @@ describe("ProductChangeNotificationsClient", () => {
       locale: {
         site: "US",
         language: "en",
-        currency: "USD"
+        currency: "USD",
       },
-      fetch
+      fetch,
     });
 
     await client.productChangeNotifications.productChangeNotifications("296-6501-1-ND", {
       Includes: "ProductChangeNotifications(PcnType,PcnDescription)",
       locale: {
-        shipToCountry: "US"
-      }
+        shipToCountry: "US",
+      },
     });
 
     const [input, init] = fetch.mock.calls[0]!;
@@ -646,7 +696,9 @@ describe("ProductChangeNotificationsClient", () => {
     const headers = new Headers(init?.headers);
 
     expect(url.pathname).toBe("/ChangeNotifications/v3/Products/296-6501-1-ND");
-    expect(url.searchParams.get("Includes")).toBe("ProductChangeNotifications(PcnType,PcnDescription)");
+    expect(url.searchParams.get("Includes")).toBe(
+      "ProductChangeNotifications(PcnType,PcnDescription)",
+    );
     expect(headers.get("X-DIGIKEY-Locale-ShipToCountry")).toBe("US");
     expect(headers.has("X-DIGIKEY-Account-Id")).toBe(false);
   });
@@ -658,11 +710,11 @@ describe("ProductChangeNotificationsClient", () => {
       accessToken: "access-token",
       oauthFlow: "authorizationCode",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await client.productChangeNotifications.productChangeNotifications("296-6501-1-ND", {
-      includes: "ProductChangeNotifications(PcnType)"
+      includes: "ProductChangeNotifications(PcnType)",
     });
 
     const [input] = fetch.mock.calls[0]!;
@@ -676,13 +728,13 @@ describe("ProductChangeNotificationsClient", () => {
       clientId: "client-id",
       accessToken: "access-token",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(
-      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND")
+      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND"),
     ).rejects.toMatchObject({
-      name: "DigiKeyConfigurationError"
+      name: "DigiKeyConfigurationError",
     } satisfies Partial<DigiKeyConfigurationError>);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -693,13 +745,13 @@ describe("ProductChangeNotificationsClient", () => {
       clientId: "client-id",
       clientSecret: "client-secret",
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(
-      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND")
+      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND"),
     ).rejects.toMatchObject({
-      name: "DigiKeyConfigurationError"
+      name: "DigiKeyConfigurationError",
     } satisfies Partial<DigiKeyConfigurationError>);
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -711,36 +763,42 @@ describe("ProductChangeNotificationsClient", () => {
         jsonResponse({
           access_token: "fresh-token",
           refresh_token: "refresh-token-2",
-          expires_in: 600
-        })
+          expires_in: 600,
+        }),
       )
-      .mockResolvedValueOnce(jsonResponse({ DigiKeyPartNumber: "296-6501-1-ND", ProductChangeNotifications: [] }));
+      .mockResolvedValueOnce(
+        jsonResponse({ DigiKeyPartNumber: "296-6501-1-ND", ProductChangeNotifications: [] }),
+      );
     const auth = new DigiKeyAuthClient({
       clientId: "client-id",
       clientSecret: "client-secret",
       environment: "sandbox",
-      fetch
+      fetch,
     });
     const tokenProvider = new DigiKeyRefreshTokenProvider({
       authClient: auth,
-      refreshToken: "refresh-token-1"
+      refreshToken: "refresh-token-1",
     });
     const client = new DigiKeyClient({
       clientId: "client-id",
       tokenProvider,
       environment: "sandbox",
-      fetch
+      fetch,
     });
 
     await expect(
-      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND")
+      client.productChangeNotifications.productChangeNotifications("296-6501-1-ND"),
     ).resolves.toMatchObject({
-      DigiKeyPartNumber: "296-6501-1-ND"
+      DigiKeyPartNumber: "296-6501-1-ND",
     });
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(String(fetch.mock.calls[0]?.[0])).toBe("https://sandbox-api.digikey.com/v1/oauth2/token");
-    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization")).toBe("Bearer fresh-token");
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      "https://sandbox-api.digikey.com/v1/oauth2/token",
+    );
+    expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization")).toBe(
+      "Bearer fresh-token",
+    );
   });
 });
 
@@ -753,9 +811,9 @@ describe("parseRateLimitHeaders", () => {
           "X-RateLimit-Remaining": "",
           "X-RateLimit-ResetTime": "  ",
           "X-BurstLimit-Limit": "NaN",
-          "Retry-After": " "
-        })
-      )
+          "Retry-After": " ",
+        }),
+      ),
     ).toEqual({
       limit: undefined,
       remaining: undefined,
@@ -765,7 +823,7 @@ describe("parseRateLimitHeaders", () => {
       burstRemaining: undefined,
       burstReset: undefined,
       burstResetTime: undefined,
-      retryAfter: undefined
+      retryAfter: undefined,
     });
   });
 });
@@ -779,9 +837,9 @@ function testClient(fetch: FetchLike): DigiKeyClient {
     locale: {
       site: "US",
       language: "en",
-      currency: "USD"
+      currency: "USD",
     },
-    fetch
+    fetch,
   });
 }
 
@@ -789,14 +847,14 @@ function jsonResponse(
   body: unknown,
   status = 200,
   statusText = "OK",
-  headers: HeadersInit = {}
+  headers: HeadersInit = {},
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
     statusText,
     headers: {
       "Content-Type": "application/json",
-      ...headers
-    }
+      ...headers,
+    },
   });
 }

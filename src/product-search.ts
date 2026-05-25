@@ -1,13 +1,18 @@
 import { PRODUCT_SEARCH_BASE_PATH } from "./constants";
-import { positiveInteger, splitRequestOptions, type DigiKeyHttpClient, type QueryParameters } from "./http";
 import type { components, operations } from "./generated/product-search-v4";
+import {
+  type DigiKeyHttpClient,
+  positiveInteger,
+  type QueryParameters,
+  splitRequestOptions,
+} from "./http";
 import type {
   DigiKeyProductPricingLocale,
   DigiKeyProductSearchLocale,
   DigiKeyRequestOptions,
   JsonResponse,
   OperationQuery,
-  OperationRequestBody
+  OperationRequestBody,
 } from "./types";
 
 export type ProductSearchSchemas = components["schemas"];
@@ -20,21 +25,31 @@ export type ManufacturersResponse = JsonResponse<ProductSearchOperations["Manufa
 export type CategoriesResponse = JsonResponse<ProductSearchOperations["Categories"]>;
 export type CategoryResponse = JsonResponse<ProductSearchOperations["CategoriesById"]>;
 export type DigiReelPricingResponse = JsonResponse<ProductSearchOperations["DigiReelPricing"]>;
-export type RecommendedProductsResponse = JsonResponse<ProductSearchOperations["RecommendedProducts"]>;
+export type RecommendedProductsResponse = JsonResponse<
+  ProductSearchOperations["RecommendedProducts"]
+>;
 export type ProductSubstitutesResponse = JsonResponse<ProductSearchOperations["Substitutions"]>;
 export type ProductAssociationsResponse = JsonResponse<ProductSearchOperations["Associations"]>;
 /** @deprecated Digi-Key marks PackageTypeByQuantity as deprecated. Use pricingOptionsByQuantity instead. */
-export type PackageTypeByQuantityResponse = JsonResponse<ProductSearchOperations["PackageTypeByQuantity"]>;
+export type PackageTypeByQuantityResponse = JsonResponse<
+  ProductSearchOperations["PackageTypeByQuantity"]
+>;
 export type MediaResponse = JsonResponse<ProductSearchOperations["Media"]>;
 export type ProductPricingResponse = JsonResponse<ProductSearchOperations["ProductPricing"]>;
-export type AlternatePackagingResponse = JsonResponse<ProductSearchOperations["AlternatePackaging"]>;
-export type PricingOptionsByQuantityResponse = JsonResponse<ProductSearchOperations["PricingOptionsByQuantity"]>;
+export type AlternatePackagingResponse = JsonResponse<
+  ProductSearchOperations["AlternatePackaging"]
+>;
+export type PricingOptionsByQuantityResponse = JsonResponse<
+  ProductSearchOperations["PricingOptionsByQuantity"]
+>;
 
 export type ProductSearchRequestOptions = DigiKeyRequestOptions<DigiKeyProductSearchLocale>;
 export type ProductPricingRequestOptions = DigiKeyRequestOptions<DigiKeyProductPricingLocale>;
 
-export type KeywordSearchOptions = ProductSearchRequestOptions & OperationQuery<ProductSearchOperations["KeywordSearch"]>;
-export type ProductDetailsOptions = ProductSearchRequestOptions & OperationQuery<ProductSearchOperations["ProductDetails"]>;
+export type KeywordSearchOptions = ProductSearchRequestOptions &
+  OperationQuery<ProductSearchOperations["KeywordSearch"]>;
+export type ProductDetailsOptions = ProductSearchRequestOptions &
+  OperationQuery<ProductSearchOperations["ProductDetails"]>;
 export type ManufacturersOptions = ProductSearchRequestOptions;
 export type CategoriesOptions = ProductSearchRequestOptions;
 export type CategoryByIdOptions = ProductSearchRequestOptions;
@@ -43,15 +58,20 @@ export type RecommendedProductsOptions = ProductSearchRequestOptions &
   Omit<OperationQuery<ProductSearchOperations["RecommendedProducts"]>, "searchOptionList"> & {
     searchOptionList?: string | readonly string[];
   };
-export type SubstitutionsOptions = ProductSearchRequestOptions & OperationQuery<ProductSearchOperations["Substitutions"]>;
+export type SubstitutionsOptions = ProductSearchRequestOptions &
+  OperationQuery<ProductSearchOperations["Substitutions"]>;
 export type ProductAssociationsOptions = ProductSearchRequestOptions;
 /** @deprecated Digi-Key marks PackageTypeByQuantity as deprecated. Use PricingOptionsByQuantityOptions instead. */
 export type PackageTypeByQuantityOptions = ProductSearchRequestOptions &
-  Omit<OperationQuery<ProductSearchOperations["PackageTypeByQuantity"]>, "requestedQuantity" | "packagingPreference"> & {
+  Omit<
+    OperationQuery<ProductSearchOperations["PackageTypeByQuantity"]>,
+    "requestedQuantity" | "packagingPreference"
+  > & {
     packagingPreference?: "CT" | "DKR";
   };
 export type MediaOptions = ProductSearchRequestOptions;
-export type ProductPricingOptions = ProductPricingRequestOptions & OperationQuery<ProductSearchOperations["ProductPricing"]>;
+export type ProductPricingOptions = ProductPricingRequestOptions &
+  OperationQuery<ProductSearchOperations["ProductPricing"]>;
 export type AlternatePackagingOptions = ProductSearchRequestOptions;
 export type PricingOptionsByQuantityOptions = ProductSearchRequestOptions &
   OperationQuery<ProductSearchOperations["PricingOptionsByQuantity"]>;
@@ -59,7 +79,10 @@ export type PricingOptionsByQuantityOptions = ProductSearchRequestOptions &
 export class ProductSearchClient {
   constructor(private readonly http: DigiKeyHttpClient) {}
 
-  keywordSearch(body?: KeywordSearchRequest, options?: KeywordSearchOptions): Promise<KeywordSearchResponse> {
+  keywordSearch(
+    body?: KeywordSearchRequest,
+    options?: KeywordSearchOptions,
+  ): Promise<KeywordSearchResponse> {
     validateKeywordSearchRequest(body);
     const [requestOptions, query] = splitRequestOptions(options);
 
@@ -70,11 +93,14 @@ export class ProductSearchClient {
       query: query as QueryParameters,
       body,
       requestOptions,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
-  productDetails(productNumber: string, options?: ProductDetailsOptions): Promise<ProductDetailsResponse> {
+  productDetails(
+    productNumber: string,
+    options?: ProductDetailsOptions,
+  ): Promise<ProductDetailsResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
 
     return this.http.request<ProductDetailsResponse>({
@@ -83,7 +109,7 @@ export class ProductSearchClient {
       path: `/search/${encodeURIComponent(productNumber)}/productdetails`,
       query: query as QueryParameters,
       requestOptions,
-      requiresAccountIdForClientCredentials: true
+      requiresAccountIdForClientCredentials: true,
     });
   }
 
@@ -93,7 +119,7 @@ export class ProductSearchClient {
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: "/search/manufacturers",
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
@@ -103,7 +129,7 @@ export class ProductSearchClient {
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: "/search/categories",
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
@@ -113,37 +139,37 @@ export class ProductSearchClient {
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/categories/${positiveInteger(categoryId, "categoryId")}`,
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
   digiReelPricing(
     productNumber: string,
     requestedQuantity: number,
-    options?: DigiReelPricingOptions
+    options?: DigiReelPricingOptions,
   ): Promise<DigiReelPricingResponse> {
     return this.http.request<DigiReelPricingResponse>({
       method: "GET",
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/${encodeURIComponent(productNumber)}/digireelpricing`,
       query: {
-        requestedQuantity: positiveInteger(requestedQuantity, "requestedQuantity")
+        requestedQuantity: positiveInteger(requestedQuantity, "requestedQuantity"),
       },
       requestOptions: options,
-      requiresAccountIdForClientCredentials: true
+      requiresAccountIdForClientCredentials: true,
     });
   }
 
   recommendedProducts(
     productNumber: string,
-    options?: RecommendedProductsOptions
+    options?: RecommendedProductsOptions,
   ): Promise<RecommendedProductsResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
     const normalizedQuery = {
       ...query,
       searchOptionList: Array.isArray(query.searchOptionList)
         ? query.searchOptionList.join(",")
-        : query.searchOptionList
+        : query.searchOptionList,
     };
 
     return this.http.request<RecommendedProductsResponse>({
@@ -152,11 +178,14 @@ export class ProductSearchClient {
       path: `/search/${encodeURIComponent(productNumber)}/recommendedproducts`,
       query: normalizedQuery as QueryParameters,
       requestOptions,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
-  substitutions(productNumber: string, options?: SubstitutionsOptions): Promise<ProductSubstitutesResponse> {
+  substitutions(
+    productNumber: string,
+    options?: SubstitutionsOptions,
+  ): Promise<ProductSubstitutesResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
 
     return this.http.request<ProductSubstitutesResponse>({
@@ -165,17 +194,20 @@ export class ProductSearchClient {
       path: `/search/${encodeURIComponent(productNumber)}/substitutions`,
       query: query as QueryParameters,
       requestOptions,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
-  associations(productNumber: string, options?: ProductAssociationsOptions): Promise<ProductAssociationsResponse> {
+  associations(
+    productNumber: string,
+    options?: ProductAssociationsOptions,
+  ): Promise<ProductAssociationsResponse> {
     return this.http.request<ProductAssociationsResponse>({
       method: "GET",
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/${encodeURIComponent(productNumber)}/associations`,
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
@@ -183,7 +215,7 @@ export class ProductSearchClient {
   packageTypeByQuantity(
     productNumber: string,
     requestedQuantity: number,
-    options?: PackageTypeByQuantityOptions
+    options?: PackageTypeByQuantityOptions,
   ): Promise<PackageTypeByQuantityResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
 
@@ -193,10 +225,10 @@ export class ProductSearchClient {
       path: `/search/packagetypebyquantity/${encodeURIComponent(productNumber)}`,
       query: {
         ...query,
-        requestedQuantity: positiveInteger(requestedQuantity, "requestedQuantity")
+        requestedQuantity: positiveInteger(requestedQuantity, "requestedQuantity"),
       } as QueryParameters,
       requestOptions,
-      requiresAccountIdForClientCredentials: true
+      requiresAccountIdForClientCredentials: true,
     });
   }
 
@@ -206,11 +238,14 @@ export class ProductSearchClient {
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/${encodeURIComponent(productNumber)}/media`,
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
-  productPricing(productNumber: string, options?: ProductPricingOptions): Promise<ProductPricingResponse> {
+  productPricing(
+    productNumber: string,
+    options?: ProductPricingOptions,
+  ): Promise<ProductPricingResponse> {
     validateProductPricingOptions(options);
     const [requestOptions, query] = splitRequestOptions(options);
 
@@ -220,24 +255,27 @@ export class ProductSearchClient {
       path: `/search/${encodeURIComponent(productNumber)}/pricing`,
       query: query as QueryParameters,
       requestOptions,
-      requiresAccountIdForClientCredentials: true
+      requiresAccountIdForClientCredentials: true,
     });
   }
 
-  alternatePackaging(productNumber: string, options?: AlternatePackagingOptions): Promise<AlternatePackagingResponse> {
+  alternatePackaging(
+    productNumber: string,
+    options?: AlternatePackagingOptions,
+  ): Promise<AlternatePackagingResponse> {
     return this.http.request<AlternatePackagingResponse>({
       method: "GET",
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/${encodeURIComponent(productNumber)}/alternatepackaging`,
       requestOptions: options,
-      includeAccountId: false
+      includeAccountId: false,
     });
   }
 
   pricingOptionsByQuantity(
     productNumber: string,
     requestedQuantity: number,
-    options?: PricingOptionsByQuantityOptions
+    options?: PricingOptionsByQuantityOptions,
   ): Promise<PricingOptionsByQuantityResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
 
@@ -246,11 +284,11 @@ export class ProductSearchClient {
       basePath: PRODUCT_SEARCH_BASE_PATH,
       path: `/search/${encodeURIComponent(productNumber)}/pricingbyquantity/${positiveInteger(
         requestedQuantity,
-        "requestedQuantity"
+        "requestedQuantity",
       )}`,
       query: query as QueryParameters,
       requestOptions,
-      requiresAccountIdForClientCredentials: true
+      requiresAccountIdForClientCredentials: true,
     });
   }
 }

@@ -77,7 +77,8 @@ export class DigiKeyAuthClient implements TokenProvider {
   constructor(options: DigiKeyAuthClientOptions) {
     this.clientId = options.clientId;
     this.clientSecret = options.clientSecret;
-    this.authBaseUrl = options.authBaseUrl ?? apiBaseUrlForEnvironment(options.environment ?? "production");
+    this.authBaseUrl =
+      options.authBaseUrl ?? apiBaseUrlForEnvironment(options.environment ?? "production");
     this.tokenUrl = new URL("/v1/oauth2/token", this.authBaseUrl).toString();
     this.fetchFn = options.fetch ?? getGlobalFetch();
     this.clockSkewMs = options.clockSkewMs ?? 30_000;
@@ -106,8 +107,14 @@ export class DigiKeyAuthClient implements TokenProvider {
     return token.access_token;
   }
 
-  async getClientCredentialsToken(options: ClientCredentialsTokenOptions = {}): Promise<DigiKeyOAuthToken> {
-    if (!options.forceRefresh && this.cachedClientCredentialsToken && !this.isExpired(this.cachedClientCredentialsToken)) {
+  async getClientCredentialsToken(
+    options: ClientCredentialsTokenOptions = {},
+  ): Promise<DigiKeyOAuthToken> {
+    if (
+      !options.forceRefresh &&
+      this.cachedClientCredentialsToken &&
+      !this.isExpired(this.cachedClientCredentialsToken)
+    ) {
       return this.cachedClientCredentialsToken.token;
     }
 
@@ -121,9 +128,9 @@ export class DigiKeyAuthClient implements TokenProvider {
       {
         grant_type: "client_credentials",
         client_id: this.clientId,
-        client_secret: this.clientSecret
+        client_secret: this.clientSecret,
       },
-      options
+      options,
     ).then((token) => {
       this.cachedClientCredentialsToken = this.cacheableToken(token);
       return token;
@@ -144,16 +151,18 @@ export class DigiKeyAuthClient implements TokenProvider {
     }
   }
 
-  async exchangeAuthorizationCode(options: AuthorizationCodeTokenOptions): Promise<DigiKeyOAuthToken> {
+  async exchangeAuthorizationCode(
+    options: AuthorizationCodeTokenOptions,
+  ): Promise<DigiKeyOAuthToken> {
     return this.requestToken(
       {
         grant_type: "authorization_code",
         client_id: this.clientId,
         client_secret: this.clientSecret,
         code: options.code,
-        redirect_uri: options.redirectUri
+        redirect_uri: options.redirectUri,
       },
-      options
+      options,
     );
   }
 
@@ -163,17 +172,20 @@ export class DigiKeyAuthClient implements TokenProvider {
         grant_type: "refresh_token",
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        refresh_token: options.refreshToken
+        refresh_token: options.refreshToken,
       },
-      options
+      options,
     );
   }
 
-  private async requestToken(form: Record<string, string>, options: TokenRequestOptions = {}): Promise<DigiKeyOAuthToken> {
+  private async requestToken(
+    form: Record<string, string>,
+    options: TokenRequestOptions = {},
+  ): Promise<DigiKeyOAuthToken> {
     const url = new URL("/v1/oauth2/token", this.authBaseUrl);
     const resolvedSignal = resolveRequestSignal({
       signal: options.signal,
-      timeoutMs: options.timeoutMs ?? this.timeoutMs
+      timeoutMs: options.timeoutMs ?? this.timeoutMs,
     });
 
     let response: Response;
@@ -184,17 +196,17 @@ export class DigiKeyAuthClient implements TokenProvider {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json"
+          Accept: "application/json",
         },
         body: new URLSearchParams(form),
-        signal: resolvedSignal.signal
+        signal: resolvedSignal.signal,
       });
       parsed = await parseResponseBody(response);
     } catch (cause) {
       throw new DigiKeyNetworkError({
         url: url.toString(),
         method: "POST",
-        cause
+        cause,
       });
     } finally {
       resolvedSignal.cleanup();
@@ -208,7 +220,7 @@ export class DigiKeyAuthClient implements TokenProvider {
         url: url.toString(),
         method: "POST",
         details: parsed,
-        headers: response.headers
+        headers: response.headers,
       });
     }
 
@@ -221,7 +233,7 @@ export class DigiKeyAuthClient implements TokenProvider {
 
     return {
       token,
-      expiresAt: expiresInMs > 0 ? Date.now() + expiresInMs : 0
+      expiresAt: expiresInMs > 0 ? Date.now() + expiresInMs : 0,
     };
   }
 
@@ -271,7 +283,7 @@ export class DigiKeyRefreshTokenProvider implements TokenProvider {
 
   private async refresh(): Promise<string> {
     const token = await this.authClient.refreshAccessToken({
-      refreshToken: this.refreshToken
+      refreshToken: this.refreshToken,
     });
 
     this.accessToken = token.access_token;
@@ -291,7 +303,11 @@ export class DigiKeyRefreshTokenProvider implements TokenProvider {
 }
 
 function assertTokenResponse(value: unknown): asserts value is DigiKeyOAuthToken {
-  if (!value || typeof value !== "object" || typeof (value as DigiKeyOAuthToken).access_token !== "string") {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    typeof (value as DigiKeyOAuthToken).access_token !== "string"
+  ) {
     throw new TypeError("Digi-Key OAuth response did not include an access_token.");
   }
 }
@@ -338,7 +354,11 @@ function canShareClientCredentialsRequest(options: ClientCredentialsTokenOptions
   return !options.forceRefresh && options.signal === undefined && options.timeoutMs === undefined;
 }
 
-async function waitForRefresh(promise: Promise<string>, options: TokenRequestContext, tokenUrl: string): Promise<string> {
+async function waitForRefresh(
+  promise: Promise<string>,
+  options: TokenRequestContext,
+  tokenUrl: string,
+): Promise<string> {
   if (!options.signal && options.timeoutMs === undefined) {
     return promise;
   }
@@ -350,7 +370,7 @@ async function waitForRefresh(promise: Promise<string>, options: TokenRequestCon
     throw new DigiKeyNetworkError({
       url: tokenUrl,
       method: "POST",
-      cause: resolvedSignal.signal.reason
+      cause: resolvedSignal.signal.reason,
     });
   }
 
@@ -365,14 +385,14 @@ async function waitForRefresh(promise: Promise<string>, options: TokenRequestCon
               new DigiKeyNetworkError({
                 url: tokenUrl,
                 method: "POST",
-                cause: resolvedSignal.signal?.reason
-              })
+                cause: resolvedSignal.signal?.reason,
+              }),
             ),
           {
-            once: true
-          }
+            once: true,
+          },
         );
-      })
+      }),
     ]);
   } finally {
     resolvedSignal.cleanup();

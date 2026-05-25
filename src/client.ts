@@ -3,7 +3,13 @@ import type { DigiKeyEnvironment } from "./constants";
 import { DigiKeyHttpClient } from "./http";
 import { ProductChangeNotificationsClient } from "./product-change-notifications";
 import { ProductSearchClient } from "./product-search";
-import type { DigiKeyLocale, DigiKeyOAuthFlow, FetchLike, ResponseHook, TokenProvider } from "./types";
+import type {
+  DigiKeyLocale,
+  DigiKeyOAuthFlow,
+  FetchLike,
+  ResponseHook,
+  TokenProvider,
+} from "./types";
 
 export interface DigiKeyClientOptions {
   clientId: string;
@@ -50,28 +56,28 @@ export class DigiKeyClient {
       retryOnUnauthorized: options.retryOnUnauthorized,
       oauthFlow: resolveOAuthFlow(options),
       timeoutMs: options.timeoutMs,
-      onResponse: options.onResponse
+      onResponse: options.onResponse,
     });
 
     this.productSearch = new ProductSearchClient(http);
     this.productChangeNotifications = new ProductChangeNotificationsClient(http);
     this.productInformation = {
       productSearch: this.productSearch,
-      productChangeNotifications: this.productChangeNotifications
+      productChangeNotifications: this.productChangeNotifications,
     };
   }
 
   static sandbox(options: Omit<DigiKeyClientOptions, "environment">): DigiKeyClient {
     return new DigiKeyClient({
       ...options,
-      environment: "sandbox"
+      environment: "sandbox",
     });
   }
 
   static production(options: Omit<DigiKeyClientOptions, "environment">): DigiKeyClient {
     return new DigiKeyClient({
       ...options,
-      environment: "production"
+      environment: "production",
     });
   }
 }
@@ -108,7 +114,7 @@ function maybeCreateAuthClient(options: DigiKeyClientOptions): DigiKeyAuthClient
     authBaseUrl: options.authBaseUrl,
     fetch: options.fetch,
     clockSkewMs: options.clockSkewMs,
-    timeoutMs: options.timeoutMs
+    timeoutMs: options.timeoutMs,
   };
 
   return new DigiKeyAuthClient(authOptions);

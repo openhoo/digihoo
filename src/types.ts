@@ -2,10 +2,7 @@ import type { DigiKeyResponseMetadata } from "./response-metadata";
 
 export type MaybePromise<T> = T | Promise<T>;
 
-export type FetchLike = (
-  input: string | URL | Request,
-  init?: RequestInit
-) => Promise<Response>;
+export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
 export interface TokenRequestContext {
   forceRefresh?: boolean;
@@ -401,7 +398,7 @@ export interface DigiKeyLocale<
   Site extends DigiKeyLocaleSite = DigiKeyLocaleSite,
   Language extends DigiKeyLocaleLanguage = DigiKeyLocaleLanguage,
   Currency extends DigiKeyLocaleCurrency = DigiKeyLocaleCurrency,
-  ShipToCountry extends DigiKeyLocaleShipToCountry = DigiKeyLocaleShipToCountry
+  ShipToCountry extends DigiKeyLocaleShipToCountry = DigiKeyLocaleShipToCountry,
 > {
   site?: Site;
   language?: Language;
@@ -439,18 +436,17 @@ export interface DigiKeyRequestOptions<Locale extends DigiKeyLocale = DigiKeyLoc
   retryOnUnauthorized?: boolean;
 }
 
-export type JsonResponse<Operation, Status extends number = 200> =
-  Operation extends {
-    responses: {
-      [Key in Status]: {
-        content: {
-          "application/json": infer Body;
-        };
+export type JsonResponse<Operation, Status extends number = 200> = Operation extends {
+  responses: {
+    [Key in Status]: {
+      content: {
+        "application/json": infer Body;
       };
     };
-  }
-    ? Body
-    : never;
+  };
+}
+  ? Body
+  : never;
 
 export type OperationQuery<Operation> = Operation extends {
   parameters: {

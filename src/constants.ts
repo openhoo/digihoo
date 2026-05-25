@@ -2,7 +2,7 @@ export type DigiKeyEnvironment = "production" | "sandbox";
 
 export const DIGIKEY_API_BASE_URLS: Record<DigiKeyEnvironment, string> = {
   production: "https://api.digikey.com",
-  sandbox: "https://sandbox-api.digikey.com"
+  sandbox: "https://sandbox-api.digikey.com",
 };
 
 export const PRODUCT_SEARCH_BASE_PATH = "/products/v4";

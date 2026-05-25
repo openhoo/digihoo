@@ -162,9 +162,9 @@ bun run generate:types
 bun run verify
 ```
 
-`bun install` configures the tracked Git commit hook that validates commit messages with hooversion before Git accepts them.
+`bun install` configures the tracked Git hooks. The pre-commit hook runs Biome on staged files, and the commit-msg hook validates commit messages with hooversion before Git accepts them.
 
-`bun run check` runs type checking, unit tests with V8 coverage thresholds, and the package build. Coverage includes runtime source files and excludes generated OpenAPI types, type-only modules, and barrel exports.
+`bun run check` runs Biome linting and formatting checks with warnings treated as failures, type checking, unit tests with V8 coverage thresholds, and the package build. Use `bun run biome:fix` to apply safe Biome formatting and lint fixes. Coverage includes runtime source files and excludes generated OpenAPI types, type-only modules, and barrel exports.
 
 `bun run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
 

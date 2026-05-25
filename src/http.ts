@@ -1,8 +1,20 @@
 import { apiBaseUrlForEnvironment, type DigiKeyEnvironment } from "./constants";
-import { apiErrorMessage, DigiKeyApiError, DigiKeyConfigurationError, DigiKeyNetworkError } from "./errors";
+import {
+  apiErrorMessage,
+  DigiKeyApiError,
+  DigiKeyConfigurationError,
+  DigiKeyNetworkError,
+} from "./errors";
 import { responseMetadata } from "./response-metadata";
 import { resolveRequestSignal } from "./signal";
-import type { DigiKeyLocale, DigiKeyOAuthFlow, DigiKeyRequestOptions, FetchLike, ResponseHook, TokenProvider } from "./types";
+import type {
+  DigiKeyLocale,
+  DigiKeyOAuthFlow,
+  DigiKeyRequestOptions,
+  FetchLike,
+  ResponseHook,
+  TokenProvider,
+} from "./types";
 
 export type QueryValue = string | number | boolean | null | undefined;
 export type QueryParameters = Record<string, QueryValue | readonly QueryValue[]>;
@@ -53,7 +65,8 @@ export class DigiKeyHttpClient {
 
   constructor(options: DigiKeyHttpClientOptions) {
     this.clientId = options.clientId;
-    this.apiBaseUrl = options.apiBaseUrl ?? apiBaseUrlForEnvironment(options.environment ?? "production");
+    this.apiBaseUrl =
+      options.apiBaseUrl ?? apiBaseUrlForEnvironment(options.environment ?? "production");
     this.fetchFn = options.fetch ?? getGlobalFetch();
     this.accessToken = options.accessToken;
     this.tokenProvider = options.tokenProvider;
@@ -70,7 +83,11 @@ export class DigiKeyHttpClient {
     this.validateRequestConfiguration(options);
     let result = await this.send(options, false);
 
-    if (!result.response.ok && result.response.status === 401 && this.shouldRetryUnauthorized(options)) {
+    if (
+      !result.response.ok &&
+      result.response.status === 401 &&
+      this.shouldRetryUnauthorized(options)
+    ) {
       result = await this.send(options, true);
     }
 
@@ -82,7 +99,7 @@ export class DigiKeyHttpClient {
         url: result.url.toString(),
         method: options.method,
         details: result.parsed,
-        headers: result.response.headers
+        headers: result.response.headers,
       });
     }
 
@@ -91,13 +108,13 @@ export class DigiKeyHttpClient {
 
   private async send(
     options: HttpRequestOptions,
-    forceRefreshToken: boolean
+    forceRefreshToken: boolean,
   ): Promise<{ url: URL; response: Response; parsed: unknown }> {
     const url = this.buildUrl(options.basePath, options.path, options.query);
     const headers = await this.buildHeaders(options, forceRefreshToken);
     const resolvedSignal = resolveRequestSignal({
       signal: options.requestOptions?.signal,
-      timeoutMs: options.requestOptions?.timeoutMs ?? this.timeoutMs
+      timeoutMs: options.requestOptions?.timeoutMs ?? this.timeoutMs,
     });
 
     let response: Response;
@@ -108,14 +125,14 @@ export class DigiKeyHttpClient {
         method: options.method,
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
-        signal: resolvedSignal.signal
+        signal: resolvedSignal.signal,
       });
       parsed = await parseResponseBody(response);
     } catch (cause) {
       throw new DigiKeyNetworkError({
         url: url.toString(),
         method: options.method,
-        cause
+        cause,
       });
     } finally {
       resolvedSignal.cleanup();
@@ -125,8 +142,8 @@ export class DigiKeyHttpClient {
       responseMetadata({
         url,
         method: options.method,
-        response
-      })
+        response,
+      }),
     );
 
     return { url, response, parsed };
@@ -145,12 +162,18 @@ export class DigiKeyHttpClient {
     return url;
   }
 
-  private async buildHeaders(options: HttpRequestOptions, forceRefreshToken: boolean): Promise<Headers> {
+  private async buildHeaders(
+    options: HttpRequestOptions,
+    forceRefreshToken: boolean,
+  ): Promise<Headers> {
     const headers = new Headers(this.defaultHeaders);
     const requestOptions = options.requestOptions;
 
     headers.set("Accept", "application/json");
-    headers.set("Authorization", `Bearer ${normalizeBearerToken(await this.resolveAccessToken(forceRefreshToken, options))}`);
+    headers.set(
+      "Authorization",
+      `Bearer ${normalizeBearerToken(await this.resolveAccessToken(forceRefreshToken, options))}`,
+    );
     headers.set("X-DIGIKEY-Client-Id", this.clientId);
 
     if (options.body !== undefined && !headers.has("Content-Type")) {
@@ -159,7 +182,7 @@ export class DigiKeyHttpClient {
 
     const locale = {
       ...this.locale,
-      ...requestOptions?.locale
+      ...requestOptions?.locale,
     };
 
     setOptionalHeader(headers, "X-DIGIKEY-Locale-Site", locale.site);
@@ -171,7 +194,11 @@ export class DigiKeyHttpClient {
     }
 
     if (options.includeAccountId ?? true) {
-      setOptionalHeader(headers, "X-DIGIKEY-Account-Id", requestOptions?.accountId ?? this.accountId);
+      setOptionalHeader(
+        headers,
+        "X-DIGIKEY-Account-Id",
+        requestOptions?.accountId ?? this.accountId,
+      );
     }
 
     if (requestOptions?.headers) {
@@ -183,7 +210,10 @@ export class DigiKeyHttpClient {
     return headers;
   }
 
-  private async resolveAccessToken(forceRefresh: boolean, options: HttpRequestOptions): Promise<string> {
+  private async resolveAccessToken(
+    forceRefresh: boolean,
+    options: HttpRequestOptions,
+  ): Promise<string> {
     if (!forceRefresh && this.accessToken) {
       return this.accessToken;
     }
@@ -192,7 +222,7 @@ export class DigiKeyHttpClient {
       return this.tokenProvider.getAccessToken({
         forceRefresh,
         signal: options.requestOptions?.signal,
-        timeoutMs: options.requestOptions?.timeoutMs ?? this.timeoutMs
+        timeoutMs: options.requestOptions?.timeoutMs ?? this.timeoutMs,
       });
     }
 
@@ -200,7 +230,9 @@ export class DigiKeyHttpClient {
       return this.accessToken;
     }
 
-    throw new TypeError("A Digi-Key accessToken, tokenProvider, or clientSecret is required for API requests.");
+    throw new TypeError(
+      "A Digi-Key accessToken, tokenProvider, or clientSecret is required for API requests.",
+    );
   }
 
   private shouldRetryUnauthorized(options: HttpRequestOptions): boolean {
@@ -216,32 +248,40 @@ export class DigiKeyHttpClient {
     if (options.requiredOAuthFlow && this.oauthFlow !== options.requiredOAuthFlow) {
       if (this.oauthFlow === "unknown") {
         throw new DigiKeyConfigurationError(
-          `This Digi-Key endpoint requires ${formatOAuthFlow(options.requiredOAuthFlow)} OAuth. Configure oauthFlow on the client or use a TokenProvider that declares oauthFlow.`
+          `This Digi-Key endpoint requires ${formatOAuthFlow(options.requiredOAuthFlow)} OAuth. Configure oauthFlow on the client or use a TokenProvider that declares oauthFlow.`,
         );
       }
 
       throw new DigiKeyConfigurationError(
-        `This Digi-Key endpoint requires ${formatOAuthFlow(options.requiredOAuthFlow)} OAuth, but the client is configured for ${formatOAuthFlow(this.oauthFlow)} OAuth.`
+        `This Digi-Key endpoint requires ${formatOAuthFlow(options.requiredOAuthFlow)} OAuth, but the client is configured for ${formatOAuthFlow(this.oauthFlow)} OAuth.`,
       );
     }
 
     const accountId = options.requestOptions?.accountId ?? this.accountId;
-    if (options.requiresAccountIdForClientCredentials && this.oauthFlow === "clientCredentials" && !accountId) {
+    if (
+      options.requiresAccountIdForClientCredentials &&
+      this.oauthFlow === "clientCredentials" &&
+      !accountId
+    ) {
       throw new DigiKeyConfigurationError(
-        "X-DIGIKEY-Account-Id is required for this Digi-Key ProductSearch endpoint when using 2-legged OAuth. Configure accountId on the client or pass it in the request options."
+        "X-DIGIKEY-Account-Id is required for this Digi-Key ProductSearch endpoint when using 2-legged OAuth. Configure accountId on the client or pass it in the request options.",
       );
     }
 
-    if (options.requiresAccountIdForClientCredentials && this.oauthFlow === "unknown" && !accountId) {
+    if (
+      options.requiresAccountIdForClientCredentials &&
+      this.oauthFlow === "unknown" &&
+      !accountId
+    ) {
       throw new DigiKeyConfigurationError(
-        "This Digi-Key ProductSearch endpoint requires X-DIGIKEY-Account-Id when using 2-legged OAuth. Configure oauthFlow: \"authorizationCode\" for a 3-legged token, or configure accountId for 2-legged OAuth."
+        'This Digi-Key ProductSearch endpoint requires X-DIGIKEY-Account-Id when using 2-legged OAuth. Configure oauthFlow: "authorizationCode" for a 3-legged token, or configure accountId for 2-legged OAuth.',
       );
     }
   }
 }
 
 export function splitRequestOptions<T extends DigiKeyRequestOptions>(
-  options: T | undefined
+  options: T | undefined,
 ): [DigiKeyRequestOptions | undefined, Omit<T, keyof DigiKeyRequestOptions>] {
   if (!options) {
     return [undefined, {} as Omit<T, keyof DigiKeyRequestOptions>];
@@ -255,9 +295,9 @@ export function splitRequestOptions<T extends DigiKeyRequestOptions>(
       headers,
       locale,
       accountId,
-      retryOnUnauthorized
+      retryOnUnauthorized,
     },
-    query as Omit<T, keyof DigiKeyRequestOptions>
+    query as Omit<T, keyof DigiKeyRequestOptions>,
   ];
 }
 
@@ -272,7 +312,7 @@ export function positiveInteger(value: number, name: string): number {
 function appendQueryParameter(
   searchParams: URLSearchParams,
   key: string,
-  value: QueryValue | readonly QueryValue[]
+  value: QueryValue | readonly QueryValue[],
 ): void {
   if (Array.isArray(value)) {
     for (const item of value) {

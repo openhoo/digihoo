@@ -1,10 +1,3 @@
-export { DigiKeyAuthClient, DigiKeyRefreshTokenProvider } from "./auth";
-export { DigiKeyClient } from "./client";
-export { DigiKeyApiError, DigiKeyConfigurationError, DigiKeyNetworkError } from "./errors";
-export { ProductChangeNotificationsClient } from "./product-change-notifications";
-export { ProductSearchClient } from "./product-search";
-export { parseRateLimitHeaders } from "./response-metadata";
-
 export type {
   AuthorizationCodeTokenOptions,
   AuthorizationUrlOptions,
@@ -12,44 +5,48 @@ export type {
   DigiKeyAuthClientOptions,
   DigiKeyOAuthToken,
   DigiKeyRefreshTokenProviderOptions,
-  RefreshTokenOptions
+  RefreshTokenOptions,
 } from "./auth";
+export { DigiKeyAuthClient, DigiKeyRefreshTokenProvider } from "./auth";
 export type { DigiKeyClientOptions } from "./client";
+export { DigiKeyClient } from "./client";
 export type { DigiKeyEnvironment } from "./constants";
 export type { DigiKeyApiErrorOptions, DigiKeyNetworkErrorOptions } from "./errors";
+export { DigiKeyApiError, DigiKeyConfigurationError, DigiKeyNetworkError } from "./errors";
 export type {
   ProductChangeNotificationOperations,
   ProductChangeNotificationSchemas,
-  ProductChangeNotificationsRequestOptions,
   ProductChangeNotificationsOptions,
-  ProductChangeNotificationsResponse
+  ProductChangeNotificationsRequestOptions,
+  ProductChangeNotificationsResponse,
 } from "./product-change-notifications";
+export { ProductChangeNotificationsClient } from "./product-change-notifications";
 export type {
-  AlternatePackagingResponse,
   AlternatePackagingOptions,
-  CategoriesResponse,
+  AlternatePackagingResponse,
   CategoriesOptions,
-  CategoryResponse,
+  CategoriesResponse,
   CategoryByIdOptions,
-  DigiReelPricingResponse,
+  CategoryResponse,
   DigiReelPricingOptions,
+  DigiReelPricingResponse,
   KeywordSearchOptions,
   KeywordSearchRequest,
   KeywordSearchResponse,
-  ManufacturersResponse,
   ManufacturersOptions,
-  MediaResponse,
+  ManufacturersResponse,
   MediaOptions,
+  MediaResponse,
   PackageTypeByQuantityOptions,
   PackageTypeByQuantityResponse,
-  ProductPricingRequestOptions,
   PricingOptionsByQuantityOptions,
   PricingOptionsByQuantityResponse,
-  ProductAssociationsResponse,
   ProductAssociationsOptions,
+  ProductAssociationsResponse,
   ProductDetailsOptions,
   ProductDetailsResponse,
   ProductPricingOptions,
+  ProductPricingRequestOptions,
   ProductPricingResponse,
   ProductSearchOperations,
   ProductSearchRequestOptions,
@@ -57,8 +54,11 @@ export type {
   ProductSubstitutesResponse,
   RecommendedProductsOptions,
   RecommendedProductsResponse,
-  SubstitutionsOptions
+  SubstitutionsOptions,
 } from "./product-search";
+export { ProductSearchClient } from "./product-search";
+export type { DigiKeyRateLimit, DigiKeyResponseMetadata } from "./response-metadata";
+export { parseRateLimitHeaders } from "./response-metadata";
 export type {
   DigiKeyLocale,
   DigiKeyLocaleCurrency,
@@ -79,7 +79,6 @@ export type {
   OperationQuery,
   OperationRequestBody,
   ResponseHook,
+  TokenProvider,
   TokenRequestContext,
-  TokenProvider
 } from "./types";
-export type { DigiKeyRateLimit, DigiKeyResponseMetadata } from "./response-metadata";

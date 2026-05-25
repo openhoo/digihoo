@@ -1,7 +1,12 @@
 import { PRODUCT_CHANGE_NOTIFICATIONS_BASE_PATH } from "./constants";
-import { splitRequestOptions, type DigiKeyHttpClient, type QueryParameters } from "./http";
 import type { components, operations } from "./generated/product-change-notifications-v3";
-import type { DigiKeyProductChangeNotificationsLocale, DigiKeyRequestOptions, JsonResponse, OperationQuery } from "./types";
+import { type DigiKeyHttpClient, type QueryParameters, splitRequestOptions } from "./http";
+import type {
+  DigiKeyProductChangeNotificationsLocale,
+  DigiKeyRequestOptions,
+  JsonResponse,
+  OperationQuery,
+} from "./types";
 
 export type ProductChangeNotificationSchemas = components["schemas"];
 export type ProductChangeNotificationOperations = operations;
@@ -26,7 +31,7 @@ export class ProductChangeNotificationsClient {
 
   productChangeNotifications(
     digiKeyPartNumber: string,
-    options?: ProductChangeNotificationsOptions
+    options?: ProductChangeNotificationsOptions,
   ): Promise<ProductChangeNotificationsResponse> {
     const [requestOptions, query] = splitRequestOptions(options);
 
@@ -35,12 +40,12 @@ export class ProductChangeNotificationsClient {
       basePath: PRODUCT_CHANGE_NOTIFICATIONS_BASE_PATH,
       path: `/Products/${encodeURIComponent(digiKeyPartNumber)}`,
       query: {
-        Includes: query.Includes ?? query.includes
+        Includes: query.Includes ?? query.includes,
       } as QueryParameters,
       requestOptions,
       includeAccountId: false,
       includeShipToCountry: true,
-      requiredOAuthFlow: "authorizationCode"
+      requiredOAuthFlow: "authorizationCode",
     });
   }
 }
