@@ -3,6 +3,7 @@ import { BarcodingClient } from "./barcoding";
 import type { DigiKeyEnvironment } from "./constants";
 import { DigiKeyHttpClient } from "./http";
 import { MyListsClient } from "./mylists";
+import { OrderStatusClient } from "./order-status";
 import { OrderingClient } from "./ordering";
 import { ProductChangeNotificationsClient } from "./product-change-notifications";
 import { ProductSearchClient } from "./product-search";
@@ -39,6 +40,7 @@ export class DigiKeyClient {
   readonly barcoding: BarcodingClient;
   readonly myLists: MyListsClient;
   readonly ordering: OrderingClient;
+  readonly orderStatus: OrderStatusClient;
   readonly productSearch: ProductSearchClient;
   readonly productChangeNotifications: ProductChangeNotificationsClient;
   readonly productInformation: {
@@ -68,6 +70,7 @@ export class DigiKeyClient {
     this.barcoding = new BarcodingClient(http);
     this.myLists = new MyListsClient(http);
     this.ordering = new OrderingClient(http);
+    this.orderStatus = new OrderStatusClient(http);
     this.productSearch = new ProductSearchClient(http);
     this.productChangeNotifications = new ProductChangeNotificationsClient(http);
     this.productInformation = {
