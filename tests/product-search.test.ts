@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import { DigiKeyApiError, DigiKeyAuthClient, DigiKeyClient, DigiKeyConfigurationError, DigiKeyNetworkError, DigiKeyRefreshTokenProvider } from "../src";
+import {
+  DigiKeyApiError,
+  DigiKeyAuthClient,
+  DigiKeyClient,
+  DigiKeyConfigurationError,
+  DigiKeyNetworkError,
+  DigiKeyRefreshTokenProvider,
+  parseRateLimitHeaders
+} from "../src";
+import { DigiKeyHttpClient } from "../src/http";
 import type {
   FetchLike,
   ManufacturersOptions,
@@ -10,6 +19,29 @@ import type {
 } from "../src";
 
 describe("ProductSearchClient", () => {
+  it("builds sandbox and production clients with productInformation aliases", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({ Categories: [] }));
+    const sandbox = DigiKeyClient.sandbox({
+      clientId: "client-id",
+      accessToken: "access-token",
+      fetch
+    });
+    const production = DigiKeyClient.production({
+      clientId: "client-id",
+      accessToken: "access-token",
+      fetch
+    });
+
+    expect(sandbox.productInformation.productSearch).toBe(sandbox.productSearch);
+    expect(sandbox.productInformation.productChangeNotifications).toBe(sandbox.productChangeNotifications);
+
+    await sandbox.productSearch.categories();
+    await production.productSearch.categories();
+
+    expect(new URL(String(fetch.mock.calls[0]?.[0])).origin).toBe("https://sandbox-api.digikey.com");
+    expect(new URL(String(fetch.mock.calls[1]?.[0])).origin).toBe("https://api.digikey.com");
+  });
+
   it("sends product details requests with OAuth, client id, locale, account id, and query parameters", async () => {
     const fetch = vi.fn<FetchLike>(async () => jsonResponse({ DigiKeyProductNumber: "296-6501-1-ND" }));
     const client = testClient(fetch);
@@ -65,6 +97,35 @@ describe("ProductSearchClient", () => {
     expect(headers.has("X-DIGIKEY-Account-Id")).toBe(false);
   });
 
+  it("normalizes custom HTTP paths and repeated query values", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({ ok: true }));
+    const http = new DigiKeyHttpClient({
+      clientId: "client-id",
+      accessToken: "access-token",
+      apiBaseUrl: "https://api.digikey.test/root/",
+      fetch
+    });
+
+    await http.request({
+      method: "GET",
+      basePath: "/base/",
+      path: "/path",
+      query: {
+        value: ["a", null, "b"],
+        enabled: true,
+        omitted: undefined
+      }
+    });
+
+    const [input] = fetch.mock.calls[0]!;
+    const url = new URL(String(input));
+    expect(url.origin).toBe("https://api.digikey.test");
+    expect(url.pathname).toBe("/base/path");
+    expect(url.searchParams.getAll("value")).toEqual(["a", "b"]);
+    expect(url.searchParams.get("enabled")).toBe("true");
+    expect(url.searchParams.has("omitted")).toBe(false);
+  });
+
   it("maps all ProductSearch v4 endpoint methods to the documented paths", async () => {
     const fetch = vi.fn<FetchLike>(async () => jsonResponse({ ok: true }));
     const client = testClient(fetch);
@@ -105,6 +166,7 @@ describe("ProductSearchClient", () => {
         "/products/v4/search/P1/pricing",
         { limit: "5", offset: "2", inStock: "true" }
       ],
+      ["productPricingWithoutOptions", () => client.productSearch.productPricing("P1"), "/products/v4/search/P1/pricing", {}],
       [
         "alternatePackaging",
         () => client.productSearch.alternatePackaging("P1"),
@@ -251,6 +313,91 @@ describe("ProductSearchClient", () => {
       isTimeout: false,
       isAbort: false
     } satisfies Partial<DigiKeyNetworkError>);
+  });
+
+  it("wraps non-error transport failures without assuming message shape", async () => {
+    const fetch = vi.fn<FetchLike>(async () => {
+      throw "offline";
+    });
+    const client = testClient(fetch);
+
+    await expect(client.productSearch.categories()).rejects.toMatchObject({
+      name: "DigiKeyNetworkError",
+      message: "Digi-Key request failed before receiving a response.",
+      method: "GET",
+      isTimeout: false,
+      isAbort: false
+    } satisfies Partial<DigiKeyNetworkError>);
+  });
+
+  it("handles empty API responses and non-JSON error bodies", async () => {
+    const fetch = vi
+      .fn<FetchLike>()
+      .mockResolvedValueOnce(new Response(null, { status: 204, statusText: "No Content" }))
+      .mockResolvedValueOnce(
+        new Response("temporarily unavailable", {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        })
+      );
+    const client = testClient(fetch);
+
+    await expect(client.productSearch.categories()).resolves.toBeUndefined();
+    await expect(client.productSearch.categories()).rejects.toMatchObject({
+      name: "DigiKeyApiError",
+      message: "Digi-Key API error 503: Service Unavailable",
+      status: 503,
+      details: "temporarily unavailable"
+    } satisfies Partial<DigiKeyApiError>);
+  });
+
+  it("rejects invalid timeout values before sending API requests", async () => {
+    const fetch = vi.fn<FetchLike>(async () => jsonResponse({}));
+    const client = testClient(fetch);
+
+    await expect(client.productSearch.categories({ timeoutMs: -1 })).rejects.toThrow(
+      "timeoutMs must be a non-negative finite number."
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("requires an explicit fetch implementation when global fetch is unavailable", () => {
+    vi.stubGlobal("fetch", undefined);
+    try {
+      expect(
+        () =>
+          new DigiKeyClient({
+            clientId: "client-id",
+            accessToken: "access-token"
+          })
+      ).toThrow("A fetch implementation is required in this runtime.");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("wraps caller-aborted API requests in DigiKeyNetworkError", async () => {
+    const controller = new AbortController();
+    controller.abort(new DOMException("caller aborted", "AbortError"));
+    const fetch = vi.fn<FetchLike>(async (_input, init) => {
+      throw init?.signal?.reason;
+    });
+    const client = testClient(fetch);
+
+    await expect(
+      client.productSearch.categories({
+        signal: controller.signal,
+        timeoutMs: 1_000
+      })
+    ).rejects.toMatchObject({
+      name: "DigiKeyNetworkError",
+      isAbort: true,
+      method: "GET"
+    } satisfies Partial<DigiKeyNetworkError>);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
 
@@ -594,6 +741,32 @@ describe("ProductChangeNotificationsClient", () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(String(fetch.mock.calls[0]?.[0])).toBe("https://sandbox-api.digikey.com/v1/oauth2/token");
     expect(new Headers(fetch.mock.calls[1]?.[1]?.headers).get("Authorization")).toBe("Bearer fresh-token");
+  });
+});
+
+describe("parseRateLimitHeaders", () => {
+  it("ignores blank and invalid rate-limit headers", () => {
+    expect(
+      parseRateLimitHeaders(
+        new Headers({
+          "X-RateLimit-Limit": "not-a-number",
+          "X-RateLimit-Remaining": "",
+          "X-RateLimit-ResetTime": "  ",
+          "X-BurstLimit-Limit": "NaN",
+          "Retry-After": " "
+        })
+      )
+    ).toEqual({
+      limit: undefined,
+      remaining: undefined,
+      reset: undefined,
+      resetTime: undefined,
+      burstLimit: undefined,
+      burstRemaining: undefined,
+      burstReset: undefined,
+      burstResetTime: undefined,
+      retryAfter: undefined
+    });
   });
 });
 

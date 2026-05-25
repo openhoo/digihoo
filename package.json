@@ -33,16 +33,18 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "generate:types": "mkdir -p src/generated && swagger2openapi --outfile /tmp/digikey-product-search-openapi.json https://developer.digikey.com/node/2357/oas-download && openapi-typescript /tmp/digikey-product-search-openapi.json --output src/generated/product-search-v4.ts && swagger2openapi --outfile /tmp/digikey-product-change-notifications-openapi.json https://developer.digikey.com/node/3668/oas-download && openapi-typescript /tmp/digikey-product-change-notifications-openapi.json --output src/generated/product-change-notifications-v3.ts",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run typecheck && npm run test:coverage && npm run build",
     "hooks:install": "if git rev-parse --git-dir >/dev/null 2>&1; then git config core.hooksPath .githooks; fi",
     "prepare": "npm run hooks:install",
     "prepack": "npm run build",
-    "verify": "npm run generate:types && npm run typecheck && npm test && npm run build"
+    "verify": "npm run generate:types && npm run typecheck && npm run test:coverage && npm run build"
   },
   "devDependencies": {
     "@openhoo/hooversion": "0.1.1",
     "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "^4.1.7",
     "openapi-typescript": "^7.13.0",
     "swagger2openapi": "^7.0.8",
     "tsup": "^8.5.0",

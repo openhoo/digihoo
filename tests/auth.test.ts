@@ -270,6 +270,75 @@ describe("DigiKeyAuthClient", () => {
     expect(onToken).toHaveBeenCalledTimes(1);
   });
 
+  it("uses unexpired initial refresh-provider tokens without refreshing", async () => {
+    const fetch = vi.fn<FetchLike>(async () => {
+      throw new Error("unexpected refresh");
+    });
+    const auth = new DigiKeyAuthClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      fetch
+    });
+    const providerFromExpiresAt = new DigiKeyRefreshTokenProvider({
+      authClient: auth,
+      refreshToken: "refresh-token",
+      accessToken: "cached-token",
+      expiresAt: Date.now() + 60_000
+    });
+    const providerFromExpiresIn = new DigiKeyRefreshTokenProvider({
+      authClient: auth,
+      refreshToken: "refresh-token",
+      accessToken: "cached-token-from-expires-in",
+      expiresIn: 60
+    });
+    const providerFromDate = new DigiKeyRefreshTokenProvider({
+      authClient: auth,
+      refreshToken: "refresh-token",
+      accessToken: "cached-token-from-date",
+      expiresAt: new Date(Date.now() + 60_000)
+    });
+
+    await expect(providerFromExpiresAt.getAccessToken()).resolves.toBe("cached-token");
+    await expect(providerFromExpiresIn.getAccessToken()).resolves.toBe("cached-token-from-expires-in");
+    await expect(providerFromDate.getAccessToken()).resolves.toBe("cached-token-from-date");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("fails only the pre-aborted refresh-token caller while the shared refresh continues", async () => {
+    let resolveResponse!: (response: Response) => void;
+    const fetch = vi.fn<FetchLike>(
+      () =>
+        new Promise((resolve) => {
+          resolveResponse = resolve;
+        })
+    );
+    const auth = new DigiKeyAuthClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      fetch
+    });
+    const provider = new DigiKeyRefreshTokenProvider({
+      authClient: auth,
+      refreshToken: "refresh-token"
+    });
+    const controller = new AbortController();
+    controller.abort(new DOMException("caller aborted", "AbortError"));
+
+    await expect(provider.getAccessToken({ signal: controller.signal })).rejects.toMatchObject({
+      name: "DigiKeyNetworkError",
+      isAbort: true
+    } satisfies Partial<DigiKeyNetworkError>);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    resolveResponse(
+      jsonResponse({
+        access_token: "access-token",
+        expires_in: 3600
+      })
+    );
+    await expect(provider.getAccessToken()).resolves.toBe("access-token");
+  });
+
   it("aborts token requests after the configured timeout", async () => {
     vi.useFakeTimers();
     try {
@@ -344,6 +413,49 @@ describe("DigiKeyAuthClient", () => {
       expect(fetch).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("rejects malformed empty and non-JSON token responses", async () => {
+    const fetch = vi
+      .fn<FetchLike>()
+      .mockResolvedValueOnce(new Response(null, { status: 200, statusText: "OK" }))
+      .mockResolvedValueOnce(
+        new Response("not-json", {
+          status: 200,
+          statusText: "OK",
+          headers: {
+            "Content-Type": "text/plain"
+          }
+        })
+      );
+    const auth = new DigiKeyAuthClient({
+      clientId: "client-id",
+      clientSecret: "client-secret",
+      fetch
+    });
+
+    await expect(auth.getClientCredentialsToken()).rejects.toThrow(
+      "Digi-Key OAuth response did not include an access_token."
+    );
+    await expect(auth.getClientCredentialsToken()).rejects.toThrow(
+      "Digi-Key OAuth response did not include an access_token."
+    );
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("requires an explicit fetch implementation when global fetch is unavailable", () => {
+    vi.stubGlobal("fetch", undefined);
+    try {
+      expect(
+        () =>
+          new DigiKeyAuthClient({
+            clientId: "client-id",
+            clientSecret: "client-secret"
+          })
+      ).toThrow("A fetch implementation is required in this runtime.");
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 });

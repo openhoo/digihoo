@@ -1,6 +1,7 @@
 # digihoo
 
 [![npm version](https://img.shields.io/npm/v/%40openhoo%2Fdigihoo?label=npm)](https://www.npmjs.com/package/@openhoo/digihoo)
+![coverage](https://img.shields.io/badge/coverage-95%25%2B-brightgreen)
 
 TypeScript SDK for Digi-Key API authentication and the Product Information APIs.
 
@@ -162,6 +163,8 @@ npm run verify
 ```
 
 `npm install` configures the tracked Git commit hook that validates commit messages with hooversion before Git accepts them.
+
+`npm run check` runs type checking, unit tests with V8 coverage thresholds, and the package build. Coverage includes runtime source files and excludes generated OpenAPI types, type-only modules, and barrel exports.
 
 `npm run generate:types` refreshes the generated TypeScript schema types from Digi-Key's official Swagger downloads.
 
